@@ -14,15 +14,19 @@ def readFile(filepath):
     file_content = f.read()
     return file_content
 
-def getFiles(path):
+def getFiles(path,extensions):
     
     #list of all .c .h .cpp .hpp files in the above path
     files = []
     # r=root, d=directories, f = files
     for r, d, f in os.walk(path):
         for file in f:
-            #ext = file.split('.')[1]
-            if '.c' in file or '.h' in file or '.cpp' in file or '.hpp':
+            if '.' not in file:
+                files.append(os.path.join(r, file))
+            else:
+                ext = files.split('.')[1]
+                if ext in extensions:
+            #if '.c' in file or '.cpp' in file or '.h' in file or '.hpp' in file:
                 files.append(os.path.join(r, file))
     
     #list to contain contents of all the files
@@ -68,8 +72,11 @@ def search():
     files_found.config(text = "")
     results.delete(1.0,END)
     results.update()
-    getFiles(entry.get())
-    root.after(10000)
+    
+    extensions = ext_entry.get().split(' ')
+    
+    getFiles(entry.get(),extensions)
+
     
     status.config(text = "Search Completed\t")
     
