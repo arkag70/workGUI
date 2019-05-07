@@ -1,8 +1,6 @@
 from tkinter import *
 import os
 from tkinter import filedialog
-from tkinter.ttk import Progressbar
-import tkinter.scrolledtext as tkscrolled
 
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 
@@ -49,8 +47,8 @@ def getFiles(path,extensions):
     if len(file_names_with_stockWords) == 0:
         results.insert(END,"None")
     
-    files_number.config(text = "files read : "+str(count)+'\t')
-    files_found.config(text = 'files with stock_words: '+str(len(file_names_with_stockWords)))
+    files_number.config(text = "Files read : "+str(count)+'\t')
+    files_found.config(text = 'Files with stock_words: '+str(len(file_names_with_stockWords)))
     
     for eachfile in file_names_with_stockWords:
         #print(eachfile)
@@ -84,51 +82,42 @@ def search():
 
 
 root  = Tk()
+root.config(background = 'light blue')
 root.geometry("900x450")
 root.resizable(width=False, height=False)
-root.title("Software Restrictions filter")
+root.title("Software Restrictions Filter")
 
-head = Frame(root,background  = 'grey')
-head.grid(row = 0,column = 0)
-
-upper = Frame(root,background  = 'white')
-upper.grid(row = 1,column = 0)
-
-gap = Frame(root,background  = 'white')
-gap.grid(row = 2,column = 0)
+# layouts
+upper = Frame(root,background  = 'light blue')
+upper.grid(row = 0,column = 0,padx = 40,pady = 20)
 
 lower = Frame(root,background  = 'white')
-lower.grid(row = 3,column = 0)
+lower.grid(row = 1,column = 0)
 
-extension_layout = Frame(root,background  = 'white')
-extension_layout.grid(row = 4,column = 0)
+extension_layout = Frame(root,background  = 'light blue')
+extension_layout.grid(row = 2,column = 0,pady = 10)
 
 down = Frame(root,background  = 'white')
-down.grid(row = 5,column = 0)
+down.grid(row = 3,column = 0)
 
-
-h_gap = Label(head,height = 1, width = 80)
-h_gap.pack()
-
-entry = Entry(upper,width = 80)
+# widgets
+entry = Entry(upper,width = 80,bd = 3)
 entry.grid(row = 0,column = 0)
+entry.config(font=("Times New Roman", 12))
 
-button_browse = Button(upper,text = "browse",command = browse,width = 10)
-button_browse.grid(row = 0,column = 1)
+button_browse = Button(upper,text = "browse",command = browse,width = 10,bd = 3,font=("Times New Roman", 10))
+button_browse.grid(row = 0,column = 1,padx = 10)
 
-button_search = Button(upper,text = "search",command = search,width = 10)
-button_search.grid(row = 0,column = 2)
+button_search = Button(upper,text = "search",command = search,width = 10,bd = 3,font=("Times New Roman", 10))
+button_search.grid(row = 0,column = 2,padx = 5)
 
-label = Label(gap,height = 1, width = 80)
-label.pack()
+v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
+h_scrollbar = Scrollbar(lower,orient = HORIZONTAL,bd = 2)
 
-v_scrollbar = Scrollbar(lower,orient = VERTICAL) 
-h_scrollbar = Scrollbar(lower,orient = HORIZONTAL)
-
-results = Text(lower, width=80, height=10, wrap=NONE,
+results = Text(lower, width=102, height=12, wrap=NONE,
                yscrollcommand = v_scrollbar.set,
                xscrollcommand = h_scrollbar.set,
-               )
+               bd = 2)
 
 v_scrollbar.config(command=results.yview)
 h_scrollbar.config(command=results.xview)
@@ -137,21 +126,23 @@ v_scrollbar.pack(side="right", fill="y")
 h_scrollbar.pack(side="bottom", fill="x")
 
 results.pack()
+results.configure(font=("Times New Roman", 12))
 
-ext_label = Label(extension_layout,text = "File extensions :  ")
+ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
 ext_label.grid(row = 0,column = 0)
+ext_label.config(background = 'light blue')
 
-ext_entry = Entry(extension_layout,width = 80)
+ext_entry = Entry(extension_layout,width = 80,bd = 3,font=("Times New Roman", 12))
 ext_entry.grid(row = 0,column = 1)
 ext_entry.insert(0,"c cpp h hpp txt cmake")
 
-status = Label(down)
+status = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
 status.pack(side='left')
 
-files_number = Label(down)
+files_number = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
 files_number.pack(side = 'left')
 
-files_found = Label(down)
+files_found = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
 files_found.pack(side = 'left')
 
 
