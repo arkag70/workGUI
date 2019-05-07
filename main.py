@@ -24,10 +24,10 @@ def getFiles(path,extensions):
             if '.' not in file:
                 files.append(os.path.join(r, file))
             else:
-                ext = files.split('.')[1]
+                ext = file.split('.')[1]
                 if ext in extensions:
             #if '.c' in file or '.cpp' in file or '.h' in file or '.hpp' in file:
-                files.append(os.path.join(r, file))
+                    files.append(os.path.join(r, file))
     
     #list to contain contents of all the files
     file_contents_list = []
@@ -60,7 +60,7 @@ def getFiles(path,extensions):
 #D:\\Arka\\StateHandlerLatestDevelop\\idc5
 
 def browse():
-    dirname = filedialog.askdirectory(parent=root, initialdir="D:", title='Select your folder')
+    dirname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select your folder')
     entry.delete(0,END)
     entry.insert(0,dirname)
     
@@ -84,7 +84,7 @@ def search():
 
 
 root  = Tk()
-
+root.geometry("900x450")
 root.resizable(width=False, height=False)
 root.title("Software Restrictions filter")
 
@@ -125,11 +125,10 @@ label.pack()
 v_scrollbar = Scrollbar(lower,orient = VERTICAL) 
 h_scrollbar = Scrollbar(lower,orient = HORIZONTAL)
 
-results = Text(lower, width=80, height=10, wrap="word",
+results = Text(lower, width=80, height=10, wrap=NONE,
                yscrollcommand = v_scrollbar.set,
                xscrollcommand = h_scrollbar.set,
-               borderwidth = 0, 
-               highlightthickness = 0)
+               )
 
 v_scrollbar.config(command=results.yview)
 h_scrollbar.config(command=results.xview)
@@ -139,8 +138,12 @@ h_scrollbar.pack(side="bottom", fill="x")
 
 results.pack()
 
+ext_label = Label(extension_layout,text = "File extensions :  ")
+ext_label.grid(row = 0,column = 0)
+
 ext_entry = Entry(extension_layout,width = 80)
-ext_entry.grid(row = 0,column = 0)
+ext_entry.grid(row = 0,column = 1)
+ext_entry.insert(0,"c cpp h hpp txt cmake")
 
 status = Label(down)
 status.pack(side='left')
