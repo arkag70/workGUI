@@ -25,12 +25,18 @@ def getFiles(path,extensions):
                 files.append(os.path.join(r, file))
             else:
                 ext = file.split('.')[1]
-                if ext in extensions:
+                if ext.lower() in extensions:
             #if '.c' in file or '.cpp' in file or '.h' in file or '.hpp' in file:
                     files.append(os.path.join(r, file))
+    
+    if len(files) == 0:
+        results.insert(END,'None')
+    else:
+        for file in files:
+            results.insert(END,file)
+            results.insert(END,"\n\n")
 
-    for file in files:
-        print(file)
+    files_number.config(text = "Files read : "+str(count)+'\t')
     
     #list to contain filenames of such files which contain stock_words
     # file_names_with_stockWords = []
@@ -66,6 +72,7 @@ def browse_root():
     rootname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select Project folder')
     entry_root.delete(0,END)
     entry_root.insert(0,rootname)
+    entry.delete(0,END)
     entry.insert(0,'Browser for your Component Directory')
     
 def search():
@@ -77,7 +84,7 @@ def search():
     results.delete(1.0,END)
     results.update()
     
-    extensions = ext_entry.get().split(' ')
+    extensions = ext_entry.get().lower().split(' ')
     
     getFiles(entry.get(),extensions)
 
