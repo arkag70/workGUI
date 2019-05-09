@@ -15,19 +15,24 @@ def readFile(filepath):
 
 def getFiles(path,extensions):
     
-    #list of all .c .h .cpp .hpp files in the above path
     files = []
-    print(f"Files with extensions {extensions}:\n\n")
+    
     # r=root, d=directories, f = files
-    for r, d, f in os.walk(path):
-        for file in f:
-            if '.' not in file:
+    if len(extensions) == 1 and extensions[0] == '':
+        # no extension is provided, selelct all files
+        
+        for r, d, f in os.walk(path):
+            for file in f:
                 files.append(os.path.join(r, file))
-            else:
+    else:
+        # for given extensions, list the files
+
+        for r, d, f in os.walk(path):
+            for file in f:
                 ext = file.split('.')[1]
                 if ext.lower() in extensions:
-            #if '.c' in file or '.cpp' in file or '.h' in file or '.hpp' in file:
                     files.append(os.path.join(r, file))
+
     
     if len(files) == 0:
         results.insert(END,'None')
@@ -36,7 +41,7 @@ def getFiles(path,extensions):
             results.insert(END,file)
             results.insert(END,"\n\n")
 
-    files_number.config(text = "Files read : "+str(count)+'\t')
+    files_number.config(text = "Files found : "+str(len(files))+'\t')
     
     #list to contain filenames of such files which contain stock_words
     # file_names_with_stockWords = []
