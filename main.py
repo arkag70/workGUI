@@ -13,8 +13,8 @@ def readFile(filepath):
     global count
     count += 1
     f = open(filepath, mode = 'r', encoding="Latin-1")
-    file_content = f.readlines()
-    file_content = [x.strip() for x in file_content]
+    file_content = f.read()
+    #file_content = [x.strip() for x in file_content]
     return file_content
 
 def getFiles(path,extensions):
@@ -37,7 +37,6 @@ def getFiles(path,extensions):
                     ext = file.split('.')[1]
                     if ext.lower() in extensions:
                         files.append(os.path.join(r, file))
-
     file_contents_list = []
     
     for file in files:
@@ -51,7 +50,7 @@ def getFiles(path,extensions):
         words_to_append = ""
         for word in stock_words:
             if word in file_contents_list[i]:
-                words_to_append = words_to_append+word+","
+                words_to_append = words_to_append+word+", "
         if len(words_to_append) != 0:
             file_names_with_stockWords.append(files[i]+" ---> "+words_to_append)
     
@@ -106,7 +105,7 @@ def search():
     results.update()
     extensions = ext_entry.get().lower().split(' ')
 
-    time.sleep(5)
+    #time.sleep(5)
     
     getFiles(entry.get(),extensions)
     status.config(text = "Search Completed\t")
@@ -198,3 +197,4 @@ progressbar.grid(row = 0, column = 3)
 
 root.iconbitmap('icon1.ico')
 root.mainloop()
+
