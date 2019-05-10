@@ -1,6 +1,10 @@
 from tkinter import *
 import os
 from tkinter import filedialog
+from tkinter import ttk
+import os 
+import time
+import threading
 
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 
@@ -29,41 +33,38 @@ def getFiles(path,extensions):
 
         for r, d, f in os.walk(path):
             for file in f:
-                ext = file.split('.')[1]
-                if ext.lower() in extensions:
-                    files.append(os.path.join(r, file))
+                if '.' in file:
+                    ext = file.split('.')[1]
+                    if ext.lower() in extensions:
+                        files.append(os.path.join(r, file))
 
+    file_contents_list = []
     
-    if len(files) == 0:
-        results.insert(END,'None')
-    else:
-        for file in files:
-            results.insert(END,file)
-            results.insert(END,"\n\n")
+    for file in files:
+        file_contents_list.append(readFile(file))
 
-    files_number.config(text = "Files found : "+str(len(files))+'\t')
     
     #list to contain filenames of such files which contain stock_words
-    # file_names_with_stockWords = []
+    file_names_with_stockWords = []
     
-    # for i in range(len(file_contents_list)):
-    #     words_to_append = ""
-    #     for word in stock_words:
-    #         if word in file_contents_list[i]:
-    #             words_to_append = words_to_append+word+","
-    #     if len(words_to_append) != 0:
-    #         file_names_with_stockWords.append(files[i]+" ---> "+words_to_append)
+    for i in range(len(file_contents_list)):
+        words_to_append = ""
+        for word in stock_words:
+            if word in file_contents_list[i]:
+                words_to_append = words_to_append+word+","
+        if len(words_to_append) != 0:
+            file_names_with_stockWords.append(files[i]+" ---> "+words_to_append)
     
-    # if len(file_names_with_stockWords) == 0:
-    #     results.insert(END,"None")
+    if len(file_names_with_stockWords) == 0:
+        results.insert(END,"None")
     
-    # files_number.config(text = "Files read : "+str(count)+'\t')
-    # files_found.config(text = 'Files with stock_words: '+str(len(file_names_with_stockWords)))
+    files_number.config(text = "Files read : "+str(count)+'\t')
+    files_found.config(text = 'Files with stock_words: '+str(len(file_names_with_stockWords)))
     
-    # for eachfile in file_names_with_stockWords:
-    #     #print(eachfile)
-    #     results.insert(END,eachfile)
-    #     results.insert(END,'\n\n')
+    for eachfile in file_names_with_stockWords:
+        #print(eachfile)
+        results.insert(END,eachfile)
+        results.insert(END,'\n\n')
         
 #D:\\Arka\\StateHandlerLatestDevelop\\idc5
 rootname = ''
@@ -79,7 +80,22 @@ def browse_root():
     entry_root.insert(0,rootname)
     entry.delete(0,END)
     entry.insert(0,'Browser for your Component Directory')
+
+def start_search_thread(event):
     
+    global search_thread
+    search_thread = threading.Thread(target = search)
+    search_thread.daemon = True
+    progressbar.start()
+    search_thread.start()
+    root.after(20,check_search_thread)
+
+def check_search_thread():
+    if search_thread.is_alive():
+        root.after(20,check_search_thread)
+    else:
+        progressbar.stop()
+  
 def search():
     global count
     count = 0
@@ -88,12 +104,11 @@ def search():
     files_found.config(text = "")
     results.delete(1.0,END)
     results.update()
-    
     extensions = ext_entry.get().lower().split(' ')
+
+    time.sleep(5)
     
     getFiles(entry.get(),extensions)
-
-    
     status.config(text = "Search Completed\t")
     
     
@@ -101,7 +116,7 @@ def search():
 
 root  = Tk()
 root.config(background = 'light blue')
-root.geometry("880x450")
+root.geometry("900x450")
 root.resizable(width=False, height=False)
 root.title("Software Restrictions Filter")
 
@@ -141,7 +156,7 @@ entry.config(font=("Times New Roman", 12))
 button_browse = Button(upper2,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
 button_browse.grid(row = 0,column = 1)
 
-button_search = Button(upper2,text = "search",command = search,width = 10,bd = 3,font=("Times New Roman", 10))
+button_search = Button(upper2,text = "search",command = lambda: start_search_thread(None),width = 10,bd = 3,font=("Times New Roman", 10))
 button_search.grid(row = 0,column = 2,padx = 5)
 
 v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
@@ -170,15 +185,16 @@ ext_entry.grid(row = 0,column = 1)
 ext_entry.insert(0,"c cpp h hpp txt cmake")
 
 status = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
-status.pack(side='left')
+status.grid(row = 0, column = 0)
 
 files_number = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
-files_number.pack(side = 'left')
+files_number.grid(row = 0, column = 1)
 
 files_found = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
-files_found.pack(side = 'left')
+files_found.grid(row = 0, column = 2)
 
+progressbar = ttk.Progressbar(down,mode = 'indeterminate')
+progressbar.grid(row = 0, column = 3)
 
-
-
+root.iconbitmap('icon1.ico')
 root.mainloop()
