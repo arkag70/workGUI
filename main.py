@@ -93,6 +93,16 @@ def check_search_thread():
         root.after(20,check_search_thread)
     else:
         progressbar.stop()
+
+def listbox_click(event):
+    w = event.widget
+    index = w.curselection()[0]
+    value = w.get(index)
+    path = value.split(" ---> ")[0]
+    #path = path.replace("/","\\")
+    #path = path.replace("\\","\\\\")
+    print(path)
+    os.startfile(path)
   
 def search():
     global count
@@ -174,6 +184,8 @@ h_scrollbar.pack(side="bottom", fill="x")
 results.pack()
 results.configure(font=("Times New Roman", 12))
 
+results.bind("<Double-Button>",listbox_click)
+
 ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
 ext_label.grid(row = 0,column = 0)
 ext_label.config(background = 'light blue')
@@ -194,5 +206,5 @@ files_found.grid(row = 0, column = 2)
 progressbar = ttk.Progressbar(down,mode = 'indeterminate')
 progressbar.grid(row = 0, column = 3)
 
-root.iconbitmap('icon1.ico')
+#root.iconbitmap('icon1.ico')
 root.mainloop()
