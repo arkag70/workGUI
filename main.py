@@ -63,7 +63,6 @@ def getFiles(path,extensions):
     for eachfile in file_names_with_stockWords:
         #print(eachfile)
         results.insert(END,eachfile)
-        results.insert(END,'\n\n')
         
 #D:\\Arka\\StateHandlerLatestDevelop\\idc5
 rootname = ''
@@ -101,8 +100,7 @@ def search():
     status.config(text = "Searching....")
     files_number.config(text = "")
     files_found.config(text = "")
-    results.delete(1.0,END)
-    results.update()
+    results.delete(0,END)
     extensions = ext_entry.get().lower().split(' ')
 
     #time.sleep(5)
@@ -161,7 +159,7 @@ button_search.grid(row = 0,column = 2,padx = 5)
 v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
 h_scrollbar = Scrollbar(lower,orient = HORIZONTAL,bd = 2)
 
-results = Text(lower, width=102, height=12, wrap=NONE,
+results = Listbox(lower, width=102, height=12,
                yscrollcommand = v_scrollbar.set,
                xscrollcommand = h_scrollbar.set,
                bd = 2)
@@ -183,13 +181,13 @@ ext_entry = Entry(extension_layout,width = 80,bd = 3,font=("Times New Roman", 12
 ext_entry.grid(row = 0,column = 1)
 ext_entry.insert(0,"c cpp h hpp txt cmake")
 
-status = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
+status = Label(down,background = 'light blue',font=("Times New Roman", 12))
 status.grid(row = 0, column = 0)
 
-files_number = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
+files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
 files_number.grid(row = 0, column = 1)
 
-files_found = Label(down,background = 'light blue',font=("Times New Roman", 12,"bold"))
+files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
 files_found.grid(row = 0, column = 2)
 
 progressbar = ttk.Progressbar(down,mode = 'indeterminate')
@@ -197,4 +195,3 @@ progressbar.grid(row = 0, column = 3)
 
 root.iconbitmap('icon1.ico')
 root.mainloop()
-
