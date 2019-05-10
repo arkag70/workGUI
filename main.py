@@ -12,10 +12,9 @@ count = 0
 def readFile(filepath):
     global count
     count += 1
-    f = open(filepath, mode = 'r', encoding="Latin-1")
-    file_content = f.read()
-    #file_content = [x.strip() for x in file_content]
-    return file_content
+    with open(filepath, mode = 'r', encoding="Latin-1") as f:
+        lines = [line.rstrip('\n') for line in f]
+    return lines
 
 def getFiles(path,extensions):
     
@@ -37,22 +36,23 @@ def getFiles(path,extensions):
                     ext = file.split('.')[1]
                     if ext.lower() in extensions:
                         files.append(os.path.join(r, file))
-    file_contents_list = []
     
+    file_contents_list = []
+
     for file in files:
         file_contents_list.append(readFile(file))
 
-    
     #list to contain filenames of such files which contain stock_words
     file_names_with_stockWords = []
     
-    for i in range(len(file_contents_list)):
+    for j,file_content in enumerate(file_contents_list):
         words_to_append = ""
         for word in stock_words:
-            if word in file_contents_list[i]:
-                words_to_append = words_to_append+word+", "
+            for i,line in enumerate(file_content):
+                if word in line:
+                    words_to_append = words_to_append+word+f" (line {i+1}), "
         if len(words_to_append) != 0:
-            file_names_with_stockWords.append(files[i]+" ---> "+words_to_append)
+            file_names_with_stockWords.append(files[j]+" ---> "+words_to_append)
     
     if len(file_names_with_stockWords) == 0:
         results.insert(END,"None")
@@ -65,19 +65,19 @@ def getFiles(path,extensions):
         results.insert(END,eachfile)
         
 #D:\\Arka\\StateHandlerLatestDevelop\\idc5
-rootname = ''
+
 def browse():
-    dirname = filedialog.askdirectory(parent=root, initialdir=rootname, title='Select your Component Directory')
+    dirname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Choose your Project Directory')
     entry.delete(0,END)
     entry.insert(0,dirname)
 
-def browse_root():
-    global rootname
-    rootname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select Project folder')
-    entry_root.delete(0,END)
-    entry_root.insert(0,rootname)
-    entry.delete(0,END)
-    entry.insert(0,'Browser for your Component Directory')
+# def browse_root():
+#     global rootname
+#     rootname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select Project folder')
+#     entry_root.delete(0,END)
+#     entry_root.insert(0,rootname)
+#     entry.delete(0,END)
+#     entry.insert(0,'Browser for your Component Directory')
 
 def start_search_thread(event):
     
@@ -118,42 +118,43 @@ root.resizable(width=False, height=False)
 root.title("Software Restrictions Filter")
 
 # layouts
+# upper = Frame(root,background  = 'light blue')
+# upper.grid(row = 0,column = 0,padx = 0,pady = 10)
+
+
+
 upper = Frame(root,background  = 'light blue')
-upper.grid(row = 0,column = 0,padx = 0,pady = 10)
-
-
-
-upper2 = Frame(root,background  = 'light blue')
-upper2.grid(row = 1,column = 0,padx = 40,pady = 20)
+upper.grid(row = 0,column = 0,padx = 40,pady = 20)
 
 lower = Frame(root,background  = 'white')
-lower.grid(row = 2,column = 0)
+lower.grid(row = 1,column = 0)
 
 extension_layout = Frame(root,background  = 'light blue')
-extension_layout.grid(row = 3,column = 0,pady = 10)
+extension_layout.grid(row = 2,column = 0,pady = 10)
 
 down = Frame(root,background  = 'white')
-down.grid(row = 4,column = 0)
+down.grid(row = 3,column = 0)
 
 # widgets
 
-entry_root = Entry(upper,width = 80,bd = 3)
-entry_root.grid(row = 0,column = 0)
-entry_root.config(font=("Times New Roman", 12))
-entry_root.insert(0,'Browser for the Project Directory')
+# entry_root = Entry(upper,width = 80,bd = 3)
+# entry_root.grid(row = 0,column = 0)
+# entry_root.config(font=("Times New Roman", 12))
+# entry_root.insert(0,'Browser for the Project Directory')
 
-button_root = Button(upper,text = "...",command = browse_root,width = 4,bd = 3,font=("Times New Roman", 10))
-button_root.grid(row = 0,column = 1)
+# button_root = Button(upper,text = "...",command = browse_root,width = 4,bd = 3,font=("Times New Roman", 10))
+# button_root.grid(row = 0,column = 1)
 
 
-entry = Entry(upper2,width = 80,bd = 3)
+entry = Entry(upper,width = 80,bd = 3)
 entry.grid(row = 0,column = 0)
 entry.config(font=("Times New Roman", 12))
+entry.insert(0,'Browser for the Project Directory')
 
-button_browse = Button(upper2,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
+button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
 button_browse.grid(row = 0,column = 1)
 
-button_search = Button(upper2,text = "search",command = lambda: start_search_thread(None),width = 10,bd = 3,font=("Times New Roman", 10))
+button_search = Button(upper,text = "search",command = lambda: start_search_thread(None),width = 10,bd = 3,font=("Times New Roman", 10))
 button_search.grid(row = 0,column = 2,padx = 5)
 
 v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
