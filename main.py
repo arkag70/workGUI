@@ -123,14 +123,16 @@ def listbox_click(event):
             except:
                 pass
         print(line_numbers)
-        line = line_numbers[0]
         #print(os.getcwd())
-        p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
-        output = p.stdout.read().decode("utf-8")
-        print(output)
+        #.decode("utf-8")
         with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
+            output = ""
+            for line in line_numbers:
+                p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
+                output = output + p.stdout.read().decode("utf-8")
+                p.kill()
             f1.write(str(output))
-        p.wait()
+
 
 
         #path = path.replace("/","\\")
