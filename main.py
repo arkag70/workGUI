@@ -10,6 +10,7 @@ import subprocess
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 #git log -p
 #git blame -L <start>,<end> full file name
+Items = []
 count = 0
 def readFile(filepath):
     global count
@@ -64,6 +65,7 @@ def getFiles(path,extensions):
     
     for eachfile in file_names_with_stockWords:
         #print(eachfile)
+        Items.append(eachfile)
         results.insert(END,eachfile)
         
 
@@ -88,7 +90,8 @@ def browse():
 #     entry.insert(0,'Browser for your Component Directory')
 
 def start_search_thread(event):
-    
+    button_search.config(state = DISABLED)
+    button_export.config(state = DISABLED)
     global search_thread
     search_thread = threading.Thread(target = search)
     search_thread.daemon = True
@@ -114,30 +117,6 @@ def listbox_click(event):
     if value != "None":
         path = value.split(" ---> ")[0]
         lines = value.split(" ---> ")[1].split(',')
-        #print(lines)
-
-        line_numbers = []
-        for line in lines:
-            try:
-                line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
-            except:
-                pass
-        print(line_numbers)
-        #print(os.getcwd())
-        #.decode("utf-8")
-        with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
-            output = ""
-            for line in line_numbers:
-                p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
-                output = output + p.stdout.read().decode("utf-8")
-                p.kill()
-            f1.write(str(output))
-
-
-
-        #path = path.replace("/","\\")
-        #path = path.replace("\\","\\\\")
-        #print(path)
         os.startfile(path)
 
   
@@ -154,8 +133,34 @@ def search():
     
     getFiles(entry.get(),extensions)
     status.config(text = "Search Completed\t")
-    
-    
+    button_export.config(state = "normal")
+    button_search.config(state = "normal")
+
+def export():
+    if len(Items) > 0:
+        with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
+            output = ""
+            for onefile in Items:
+                path = onefile.split(" ---> ")[0]
+                output = output + path + "\n\n"
+                lines = onefile.split(" ---> ")[1].split(',')
+
+                line_numbers = []
+                for line in lines:
+                    try:
+                        line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
+                    except:
+                        pass
+                print(line_numbers)
+                for line in line_numbers:
+                    p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
+                    output = output + p.stdout.read().decode("utf-8")
+                    p.kill()
+                output = output + "\n---------------------------------------------------\n"
+            f1.write(str(output))
+    else:
+        print("Nothing to export")
+            
 
 
 root  = Tk()
@@ -203,6 +208,9 @@ button_browse.grid(row = 0,column = 1)
 
 button_search = Button(upper,text = "search",command = lambda: start_search_thread(None),width = 10,bd = 3,font=("Times New Roman", 10))
 button_search.grid(row = 0,column = 2,padx = 5)
+
+button_export = Button(upper,text = "export All",command = export,width = 8,bd = 3,font=("Times New Roman", 10))
+button_export.grid(row = 0,column = 3)
 
 v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
 h_scrollbar = Scrollbar(lower,orient = HORIZONTAL,bd = 2)
