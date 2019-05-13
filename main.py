@@ -64,10 +64,16 @@ def getFiles(path,extensions):
         #print(eachfile)
         results.insert(END,eachfile)
         
-#D:\\Arka\\StateHandlerLatestDevelop\\idc5
+
+initialdir = ""
 
 def browse():
-    dirname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Choose your Project Directory')
+    global initialdir
+    if entry.get() == "Browser for the Project Directory" or entry.get() == '':
+        initialdir = "D:\\"
+    else:
+        initialdir = entry.get()
+    dirname = filedialog.askdirectory(parent=root, initialdir=initialdir, title='Choose your Project Directory')
     entry.delete(0,END)
     entry.insert(0,dirname)
 
@@ -98,11 +104,12 @@ def listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
     value = w.get(index)
-    path = value.split(" ---> ")[0]
-    #path = path.replace("/","\\")
-    #path = path.replace("\\","\\\\")
-    print(path)
-    os.startfile(path)
+    if value != "None":
+        path = value.split(" ---> ")[0]
+        #path = path.replace("/","\\")
+        #path = path.replace("\\","\\\\")
+        print(path)
+        os.startfile(path)
   
 def search():
     global count
