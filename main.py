@@ -5,9 +5,11 @@ from tkinter import ttk
 import os 
 import time
 import threading
+import subprocess
 
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
-
+#git log -p
+#git blame -L <start>,<end> full file name
 count = 0
 def readFile(filepath):
     global count
@@ -100,16 +102,42 @@ def check_search_thread():
     else:
         progressbar.stop()
 
+def get_path(path):
+    p_list = path.split('\\')
+    return "\\".join(p_list[:-1])
+
+
 def listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
     value = w.get(index)
     if value != "None":
         path = value.split(" ---> ")[0]
+        lines = value.split(" ---> ")[1].split(',')
+        #print(lines)
+
+        line_numbers = []
+        for line in lines:
+            try:
+                line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
+            except:
+                pass
+        print(line_numbers)
+        line = line_numbers[0]
+        #print(os.getcwd())
+        p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
+        output = p.stdout.read().decode("utf-8")
+        print(output)
+        with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
+            f1.write(str(output))
+        p.wait()
+
+
         #path = path.replace("/","\\")
         #path = path.replace("\\","\\\\")
-        print(path)
+        #print(path)
         os.startfile(path)
+
   
 def search():
     global count
