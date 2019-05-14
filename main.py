@@ -6,6 +6,8 @@ import os
 import time
 import threading
 import subprocess
+import pandas as pd
+
 
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 #git log -p
@@ -136,28 +138,72 @@ def search():
     button_export.config(state = "normal")
     button_search.config(state = "normal")
 
+cid = []
+line_n = []
+auth = []
+a_mail = []
+a_time = []
+committer = []
+c_mail = []
+c_time = []
+summary = []
+file_name = []
+line_content = []
+
+def structure(output):
+
+    cid.append(output[0].split(' ')[0])
+    line_n.append(output[0].split(' ')[1])
+    auth.append(" ".join(output[1].split(' ')[1:]))
+    a_mail.append(output[2].split(' ')[1])
+    a_time.append(output[3].split(' ')[1]+" "+output[4].split(' ')[1])
+    committer.append(" ".join(output[5].split(' ')[1:]))
+    c_mail.append(output[6].split(' ')[1])
+    c_time.append(output[7].split(' ')[1]+" "+output[8].split(' ')[1])
+    summary.append(" ".join(output[9].split(' ')[1:]))
+    file_name.append(" ".join(output[10].split(' ')[1:]))
+    line_content.append(output[11][0])
+
+def get_dataframe():
+
+    df = pd.DataFrame({
+        "Commit_Id" : cid, "Author" : auth, "Author_Mail" : a_mail, "Author_Time" : a_time, "Committer" : committer, "Committer_Mail" : c_mail,
+        "Committer_Time" : c_time, "Summary" : summary, "File" : file_name, "Line_Number" : line_n, "Line" : line_content
+        })
+    return df
+
+
+
+
+
 def export():
     if len(Items) > 0:
-        with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
-            output = ""
-            for onefile in Items:
-                path = onefile.split(" ---> ")[0]
-                output = output + path + "\n\n"
-                lines = onefile.split(" ---> ")[1].split(',')
+        #with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
+        output = ""
+        for onefile in Items:
+            path = onefile.split(" ---> ")[0]
+            #output = output + path + "\n\n"
+            lines = onefile.split(" ---> ")[1].split(',')
 
-                line_numbers = []
-                for line in lines:
-                    try:
-                        line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
-                    except:
-                        pass
-                print(line_numbers)
-                for line in line_numbers:
-                    p = subprocess.Popen(["git", "blame","-L",line+","+line,path],cwd = get_path(path),stdout = subprocess.PIPE)
-                    output = output + p.stdout.read().decode("utf-8")
-                    p.kill()
-                output = output + "\n---------------------------------------------------\n"
-            f1.write(str(output))
+            line_numbers = []
+            for line in lines:
+                try:
+                    line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
+                except:
+                    pass
+            #print(line_numbers)
+            for line in line_numbers:
+                #git blame --line-porcelain file
+                p = subprocess.Popen(["git", "blame","--line-porcelain","-L", line+","+line, path],cwd = get_path(path),stdout = subprocess.PIPE)
+                output = p.stdout.read().decode("utf-8").split('\n')
+                structure(output)
+                p.kill()
+        df = get_dataframe()
+        #df.to_csv(os.getcwd()+"\\git_blame.csv", sep='\t')
+
+        writer = pd.ExcelWriter(os.getcwd()+'\\git_blame.xlsx')
+        df.to_excel(writer,'Sheet5')
+        writer.save()
     else:
         print("Nothing to export")
             
