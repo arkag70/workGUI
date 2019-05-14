@@ -152,6 +152,7 @@ line_content = []
 
 def structure(output):
 
+
     cid.append(output[0].split(' ')[0])
     line_n.append(output[0].split(' ')[1])
     auth.append(" ".join(output[1].split(' ')[1:]))
@@ -177,6 +178,19 @@ def get_dataframe():
 
 
 def export():
+    
+    cid[:] = []
+    line_n[:] = []
+    auth[:] = []
+    a_mail[:] = []
+    a_time[:] = []
+    committer[:] = []
+    c_mail[:] = []
+    c_time[:] = []
+    summary[:] = []
+    file_name[:] = []
+    line_content[:] = []
+
     if len(Items) > 0:
         #with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
         output = ""
@@ -202,7 +216,7 @@ def export():
         #df.to_csv(os.getcwd()+"\\git_blame.csv", sep='\t')
 
         writer = pd.ExcelWriter(os.getcwd()+'\\git_blame.xlsx')
-        df.to_excel(writer,'Sheet5')
+        df.to_excel(writer,'BlameSheet')
         writer.save()
     else:
         print("Nothing to export")
