@@ -125,6 +125,8 @@ def listbox_click(event):
 def search():
     global count
     count = 0
+    global Items
+    Items = []
     status.config(text = "Searching....")
     files_number.config(text = "")
     files_found.config(text = "")
@@ -179,6 +181,7 @@ def get_dataframe():
 
 def export():
     
+    errorflag = 0
     cid[:] = []
     line_n[:] = []
     auth[:] = []
@@ -208,16 +211,28 @@ def export():
             #print(line_numbers)
             for line in line_numbers:
                 #git blame --line-porcelain file
-                p = subprocess.Popen(["git", "blame","--line-porcelain","-L", line+","+line, path],cwd = get_path(path),stdout = subprocess.PIPE)
-                output = p.stdout.read().decode("utf-8").split('\n')
-                structure(output)
-                p.kill()
-        df = get_dataframe()
-        #df.to_csv(os.getcwd()+"\\git_blame.csv", sep='\t')
+                try:
+                    p = subprocess.Popen(["git", "blame","--line-porcelain","-L", line+","+line, path],cwd = get_path(path),stdout = subprocess.PIPE)
+                    output = p.stdout.read().decode("utf-8").split('\n')
+                    structure(output)
+                    p.kill()
+                except:
+                    print("There have been errors")
+                    errorflag = 1
 
-        writer = pd.ExcelWriter(os.getcwd()+'\\git_blame.xlsx')
-        df.to_excel(writer,'BlameSheet')
-        writer.save()
+        if errorflag == 0:    
+            df = get_dataframe()
+            new_dir = "D:\\Blame_Reports\\"
+            if os.path.isdir(new_dir) == False:
+                os.makedirs(new_dir)
+            writer = pd.ExcelWriter(new_dir+'git_blame'+str(len(os.listdir(new_dir))+1)+'.xlsx')
+            df.to_excel(writer,'BlameSheet')
+            writer.save()
+            print("Blame Report is created")
+        else:
+            print("No Report is created")
+                
+    
     else:
         print("Nothing to export")
             
