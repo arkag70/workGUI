@@ -7,6 +7,7 @@ import time
 import threading
 import subprocess
 import pandas as pd
+from datetime import datetime, timezone
 
 
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
@@ -159,13 +160,18 @@ def structure(output):
     line_n.append(output[0].split(' ')[1])
     auth.append(" ".join(output[1].split(' ')[1:]))
     a_mail.append(output[2].split(' ')[1])
-    a_time.append(output[3].split(' ')[1]+" "+output[4].split(' ')[1])
+    epoch = int(output[3].split(' ')[1])
+    a_time.append(time.strftime("%Z - %Y/%m/%d, %H:%M:%S", time.localtime(epoch)))#+" "+output[4].split(' ')[1])
     committer.append(" ".join(output[5].split(' ')[1:]))
     c_mail.append(output[6].split(' ')[1])
-    c_time.append(output[7].split(' ')[1]+" "+output[8].split(' ')[1])
+    epoch = int(output[7].split(' ')[1])
+    c_time.append(time.strftime("%Z - %Y/%m/%d, %H:%M:%S", time.localtime(epoch)))#+" "+output[8].split(' ')[1])
     summary.append(" ".join(output[9].split(' ')[1:]))
     file_name.append(" ".join(output[10].split(' ')[1:]))
-    line_content.append(output[11][0])
+    content = output[11][:]
+    content = content.replace("\t"," ")
+    content = content.replace("  ","")
+    line_content.append(content)
 
 def get_dataframe():
 
@@ -222,7 +228,7 @@ def export():
 
         if errorflag == 0:    
             df = get_dataframe()
-            new_dir = "D:\\Blame_Reports\\"
+            new_dir = os.getcwd()+"\\Blame_Reports\\"
             if os.path.isdir(new_dir) == False:
                 os.makedirs(new_dir)
             writer = pd.ExcelWriter(new_dir+'git_blame'+str(len(os.listdir(new_dir))+1)+'.xlsx')
