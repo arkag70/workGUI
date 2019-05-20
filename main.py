@@ -9,6 +9,11 @@ import subprocess
 import pandas as pd
 from datetime import datetime, timezone
 
+stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
+#git log -p
+#git blame -L <start>,<end> full file name
+Items = []
+count = 0
 
 def remove_comments(filepath):
     comment = 0
@@ -46,23 +51,18 @@ def remove_comments(filepath):
 
     return final_list
 
-stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
-#git log -p
-#git blame -L <start>,<end> full file name
-Items = []
-count = 0
 def readFile(filepath):
     global count
     count += 1
     
-    # if checkbox is on:
-    #     return remove_comments(filepath)
+    if checkCmd.get() == 1:
+        return remove_comments(filepath)
 
-    # else:
+    else:
 
-    #     with open(filepath, mode = 'r', encoding="Latin-1") as f:
-    #         lines = [line.rstrip('\n') for line in f]
-    #     return lines
+        with open(filepath, mode = 'r', encoding="Latin-1") as f:
+            lines = [line.rstrip('\n') for line in f]
+        return lines
 
 def getFiles(path,extensions):
     
@@ -362,17 +362,22 @@ ext_entry = Entry(extension_layout,width = 80,bd = 3,font=("Times New Roman", 12
 ext_entry.grid(row = 0,column = 1)
 ext_entry.insert(0,"c cpp h hpp txt cmake")
 
+checkCmd = IntVar()
+checkCmd.set(0)
+checkBox = Checkbutton(down, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments")
+checkBox.grid(row = 0, column = 0)
+
 status = Label(down,background = 'light blue',font=("Times New Roman", 12))
-status.grid(row = 0, column = 0)
+status.grid(row = 0, column = 1)
 
 files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_number.grid(row = 0, column = 1)
+files_number.grid(row = 0, column = 2)
 
 files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_found.grid(row = 0, column = 2)
+files_found.grid(row = 0, column = 3)
 
 progressbar = ttk.Progressbar(down,mode = 'indeterminate')
-progressbar.grid(row = 0, column = 3)
+progressbar.grid(row = 0, column = 4)
 
 #root.iconbitmap('icon1.ico')
 root.mainloop()
