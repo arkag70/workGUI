@@ -10,6 +10,42 @@ import pandas as pd
 from datetime import datetime, timezone
 
 
+def remove_comments(filepath):
+    comment = 0
+    final_list = []
+    with open(filepath,mode = "r", encoding="Latin-1") as f:
+        lines = [line.rstrip('\n') for line in f]
+
+    for line in lines:
+        #print(line)
+        if comment == 1:
+            if "*/" in line:
+                _index = line.index('*/')
+                final_list.append(line[_index+2:])
+                comment = 0
+            continue
+
+        if "//" in line:
+            #single line comment
+            _index = line.index('//')
+            final_list.append(line[:_index])
+
+        elif "/*" in line:
+            if "*/" in line:
+                #single line comment again
+                s_index = line.index("/*")
+                e_index = line.index("*/")
+                final_list.append(line[:s_index] + line[e_index+2:])
+            else:
+                #multi line comment
+                _index = line.index('/*')
+                final_list.append(line[:_index])
+                comment = 1
+        else:
+            final_list.append(line)
+
+    return final_list
+
 stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 #git log -p
 #git blame -L <start>,<end> full file name
@@ -18,9 +54,15 @@ count = 0
 def readFile(filepath):
     global count
     count += 1
-    with open(filepath, mode = 'r', encoding="Latin-1") as f:
-        lines = [line.rstrip('\n') for line in f]
-    return lines
+    
+    # if checkbox is on:
+    #     return remove_comments(filepath)
+
+    # else:
+
+    #     with open(filepath, mode = 'r', encoding="Latin-1") as f:
+    #         lines = [line.rstrip('\n') for line in f]
+    #     return lines
 
 def getFiles(path,extensions):
     
