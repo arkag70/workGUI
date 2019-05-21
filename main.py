@@ -28,6 +28,9 @@ def remove_comments(filepath):
                 _index = line.index('*/')
                 final_list.append(line[_index+2:])
                 comment = 0
+            else:
+                final_list.append("     ")
+
             continue
 
         if "//" in line:
@@ -54,7 +57,7 @@ def remove_comments(filepath):
 def readFile(filepath):
     global count
     count += 1
-    
+    files_number.config(text = "Files read : "+str(count)+'\t')
     if checkCmd.get() == 1:
         return remove_comments(filepath)
 
@@ -105,7 +108,7 @@ def getFiles(path,extensions):
     if len(file_names_with_stockWords) == 0:
         results.insert(END,"None")
     
-    files_number.config(text = "Files read : "+str(count)+'\t')
+    
     files_found.config(text = 'Files with stock_words: '+str(len(file_names_with_stockWords)))
     
     for eachfile in file_names_with_stockWords:
@@ -288,7 +291,7 @@ def export():
 
 root  = Tk()
 root.config(background = 'light blue')
-root.geometry("900x450")
+root.geometry("920x470")
 root.resizable(width=False, height=False)
 root.title("Software Restrictions Filter")
 
@@ -307,8 +310,11 @@ lower.grid(row = 1,column = 0)
 extension_layout = Frame(root,background  = 'light blue')
 extension_layout.grid(row = 2,column = 0,pady = 10)
 
-down = Frame(root,background  = 'white')
-down.grid(row = 3,column = 0)
+forcheckbox = Frame(root,background  = 'light blue')
+forcheckbox.grid(row = 3,column = 0,pady = 10)
+
+down = Frame(root,background  = 'light blue')
+down.grid(row = 4,column = 0,pady = 10)
 
 # widgets
 
@@ -364,20 +370,20 @@ ext_entry.insert(0,"c cpp h hpp txt cmake")
 
 checkCmd = IntVar()
 checkCmd.set(0)
-checkBox = Checkbutton(down, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments")
+checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
 checkBox.grid(row = 0, column = 0)
 
 status = Label(down,background = 'light blue',font=("Times New Roman", 12))
-status.grid(row = 0, column = 1)
+status.grid(row = 0, column = 0)
 
 files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_number.grid(row = 0, column = 2)
+files_number.grid(row = 0, column = 1)
 
 files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_found.grid(row = 0, column = 3)
+files_found.grid(row = 0, column = 2)
 
 progressbar = ttk.Progressbar(down,mode = 'indeterminate')
-progressbar.grid(row = 0, column = 4)
+progressbar.grid(row = 0, column = 3)
 
 #root.iconbitmap('icon1.ico')
 root.mainloop()
