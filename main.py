@@ -57,7 +57,7 @@ def remove_comments(filepath):
 def readFile(filepath):
     global count
     count += 1
-    files_number.config(text = "Files read : "+str(count)+'\t')
+    files_number.config(text = "Files scanned : "+str(count)+'\t')
     if checkCmd.get() == 1:
         return remove_comments(filepath)
 
@@ -91,16 +91,18 @@ def getFiles(path,extensions):
     file_contents_list = []
 
     for file in files:
+        inputs.insert(END,file)
         file_contents_list.append(readFile(file))
 
     #list to contain filenames of such files which contain stock_words
     file_names_with_stockWords = []
-    
+    hits = 0
     for j,file_content in enumerate(file_contents_list):
         words_to_append = ""
         for word in stock_words:
             for i,line in enumerate(file_content):
                 if word in line:
+                    hits += 1
                     words_to_append = words_to_append+word+f" (line {i+1}), "
         if len(words_to_append) != 0:
             file_names_with_stockWords.append(files[j]+" ---> "+words_to_append)
@@ -109,7 +111,8 @@ def getFiles(path,extensions):
         results.insert(END,"None")
     
     
-    files_found.config(text = 'Files with stock_words: '+str(len(file_names_with_stockWords)))
+    files_found.config(text = 'Files with hits: '+str(len(file_names_with_stockWords)))
+    occurances.config(text = 'Number of hits: '+str(hits))
     
     for eachfile in file_names_with_stockWords:
         #print(eachfile)
@@ -158,7 +161,7 @@ def get_path(path):
     return "\\".join(p_list[:-1])
 
 
-def listbox_click(event):
+def res_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
     value = w.get(index)
@@ -167,22 +170,34 @@ def listbox_click(event):
         lines = value.split(" ---> ")[1].split(',')
         os.startfile(path)
 
+def inp_listbox_click(event):
+    w = event.widget
+    index = w.curselection()[0]
+    value = w.get(index)
+    try:
+        print(value)
+        os.startfile(value)
+    except:
+        print("Some error")
+
   
 def search():
     global count
     count = 0
     global Items
     Items = []
-    status.config(text = "Searching....")
+    status.config(text = "Scanning....")
     files_number.config(text = "")
     files_found.config(text = "")
+    occurances.config(text = "")
+    inputs.delete(0,END)
     results.delete(0,END)
-    extensions = ext_entry.get().lower().split(' ')
+    extensions = ext_entry.get().lower().split(',')
 
     #time.sleep(5)
     
     getFiles(entry.get(),extensions)
-    status.config(text = "Search Completed\t")
+    status.config(text = "Scanning Complete\t")
     button_export.config(state = "normal")
     button_search.config(state = "normal")
 
@@ -291,9 +306,9 @@ def export():
 
 root  = Tk()
 root.config(background = 'light blue')
-root.geometry("920x470")
+root.geometry("1120x500")
 root.resizable(width=False, height=False)
-root.title("Software Restrictions Filter")
+root.title("DASy Software Restrictions Scanner")
 
 # layouts
 # upper = Frame(root,background  = 'light blue')
@@ -304,30 +319,29 @@ root.title("Software Restrictions Filter")
 upper = Frame(root,background  = 'light blue')
 upper.grid(row = 0,column = 0,padx = 40,pady = 20)
 
-lower = Frame(root,background  = 'white')
-lower.grid(row = 1,column = 0)
+Labelling = Frame(root,background  = 'light blue')
+Labelling.grid(row = 1,column = 0)
+
+lower = Frame(root,background  = 'light blue')
+lower.grid(row = 2,column = 0)
+
+lower_left = Frame(lower,background  = 'light blue')
+lower_left.grid(row = 0,column = 0,padx = 10)
+
+lower_right = Frame(lower,background  = 'light blue')
+lower_right.grid(row = 0,column = 1,padx = 5)
 
 extension_layout = Frame(root,background  = 'light blue')
-extension_layout.grid(row = 2,column = 0,pady = 10)
+extension_layout.grid(row = 3,column = 0,pady = 10)
 
 forcheckbox = Frame(root,background  = 'light blue')
-forcheckbox.grid(row = 3,column = 0,pady = 10)
+forcheckbox.grid(row = 4,column = 0,pady = 10)
 
 down = Frame(root,background  = 'light blue')
-down.grid(row = 4,column = 0,pady = 10)
-
-# widgets
-
-# entry_root = Entry(upper,width = 80,bd = 3)
-# entry_root.grid(row = 0,column = 0)
-# entry_root.config(font=("Times New Roman", 12))
-# entry_root.insert(0,'Browser for the Project Directory')
-
-# button_root = Button(upper,text = "...",command = browse_root,width = 4,bd = 3,font=("Times New Roman", 10))
-# button_root.grid(row = 0,column = 1)
+down.grid(row = 5,column = 0,pady = 10)
 
 
-entry = Entry(upper,width = 80,bd = 3)
+entry = Entry(upper,width = 100,bd = 3)
 entry.grid(row = 0,column = 0)
 entry.config(font=("Times New Roman", 12))
 entry.insert(0,'Browser for the Project Directory')
@@ -335,16 +349,48 @@ entry.insert(0,'Browser for the Project Directory')
 button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
 button_browse.grid(row = 0,column = 1)
 
-button_search = Button(upper,text = "search",command = lambda: start_search_thread(None),width = 10,bd = 3,font=("Times New Roman", 10))
+button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
 button_search.grid(row = 0,column = 2,padx = 5)
 
-button_export = Button(upper,text = "export All",command = export,width = 8,bd = 3,font=("Times New Roman", 10))
+button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
 button_export.grid(row = 0,column = 3)
 
-v_scrollbar = Scrollbar(lower,orient = VERTICAL,bd = 2) 
-h_scrollbar = Scrollbar(lower,orient = HORIZONTAL,bd = 2)
+inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
+inputLabel.grid(row = 0,column = 0)
+inputLabel.config(background = 'light blue')
 
-results = Listbox(lower, width=102, height=12,
+resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
+resultLabel.grid(row = 0,column = 1)
+resultLabel.config(background = 'light blue')
+
+#   input listbox
+
+v_scrollbar_i = Scrollbar(lower_left,orient = VERTICAL,bd = 2) 
+h_scrollbar_i = Scrollbar(lower_left,orient = HORIZONTAL,bd = 2)
+
+inputs = Listbox(lower_left, width=65, height=12,
+               yscrollcommand = v_scrollbar_i.set,
+               xscrollcommand = h_scrollbar_i.set,
+               bd = 2)
+
+v_scrollbar_i.config(command=inputs.yview)
+h_scrollbar_i.config(command=inputs.xview)
+
+v_scrollbar_i.pack(side="right", fill="y")
+h_scrollbar_i.pack(side="bottom", fill="x")
+
+inputs.pack(side = LEFT)
+inputs.configure(font=("Times New Roman", 12))
+
+inputs.bind("<Double-Button>",inp_listbox_click)
+
+
+#   results listbox
+
+v_scrollbar = Scrollbar(lower_right,orient = VERTICAL,bd = 2) 
+h_scrollbar = Scrollbar(lower_right,orient = HORIZONTAL,bd = 2)
+
+results = Listbox(lower_right, width=65, height=12,
                yscrollcommand = v_scrollbar.set,
                xscrollcommand = h_scrollbar.set,
                bd = 2)
@@ -355,18 +401,18 @@ h_scrollbar.config(command=results.xview)
 v_scrollbar.pack(side="right", fill="y")
 h_scrollbar.pack(side="bottom", fill="x")
 
-results.pack()
+results.pack(side = LEFT)
 results.configure(font=("Times New Roman", 12))
 
-results.bind("<Double-Button>",listbox_click)
+results.bind("<Double-Button>",res_listbox_click)
 
 ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
 ext_label.grid(row = 0,column = 0)
 ext_label.config(background = 'light blue')
 
-ext_entry = Entry(extension_layout,width = 80,bd = 3,font=("Times New Roman", 12))
+ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
 ext_entry.grid(row = 0,column = 1)
-ext_entry.insert(0,"c cpp h hpp txt cmake")
+ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
 
 checkCmd = IntVar()
 checkCmd.set(0)
@@ -374,16 +420,19 @@ checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, te
 checkBox.grid(row = 0, column = 0)
 
 status = Label(down,background = 'light blue',font=("Times New Roman", 12))
-status.grid(row = 0, column = 0)
+status.grid(row = 0, column = 1)
 
 files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_number.grid(row = 0, column = 1)
+files_number.grid(row = 0, column = 2)
 
 files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_found.grid(row = 0, column = 2)
+files_found.grid(row = 0, column = 3)
+
+occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
+occurances.grid(row = 0, column = 4)
 
 progressbar = ttk.Progressbar(down,mode = 'indeterminate')
-progressbar.grid(row = 0, column = 3)
+progressbar.grid(row = 0, column = 0)
 
 #root.iconbitmap('icon1.ico')
 root.mainloop()
