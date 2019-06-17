@@ -9,12 +9,105 @@ import subprocess
 import pandas as pd
 from datetime import datetime, timezone
 
-stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 #git log -p
 #git blame -L <start>,<end> full file name
 Items = []
 count = 0
 
+#-------------------------------------------------------------------------------------------------#
+def category1_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "vfork" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 1 lines: {lines}")
+
+    return 0
+
+#-------------------------------------------------------------------------------------------------#
+
+def category2_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "nanospin" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 2 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category3_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "dup2" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 3 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category4_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "pthread_setschedprio" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 4 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category5_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category6_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category7_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category8_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def filter_search(one_file):
+    issues = []
+
+    a = category1_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category2_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category3_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category4_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category5_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category6_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category7_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category8_search(one_file)
+    if a!=0:
+        issues.append(a)
+    #print(issues)
+    
+    return issues
+
+#---------------------------------------------------------------------------------------------------#
 def remove_comments(filepath):
     comment = 0
     final_list = []
@@ -53,7 +146,7 @@ def remove_comments(filepath):
             final_list.append(line)
 
     return final_list
-
+#---------------------------------------------------------------------------------------------------#
 def readFile(filepath):
     global count
     count += 1
@@ -67,10 +160,12 @@ def readFile(filepath):
             lines = [line.rstrip('\n') for line in f]
         return lines
 
+#---------------------------------------------------------------------------------------------------#
+
 def getFiles(path,extensions):
     
     files = []
-    
+    file_names_with_issues = []
     # r=root, d=directories, f = files
     if len(extensions) == 1 and extensions[0] == '':
         # no extension is provided, selelct all files
@@ -94,32 +189,47 @@ def getFiles(path,extensions):
         inputs.insert(END,file)
         file_contents_list.append(readFile(file))
 
-    #list to contain filenames of such files which contain stock_words
-    file_names_with_stockWords = []
-    hits = 0
-    for j,file_content in enumerate(file_contents_list):
-        words_to_append = ""
-        for word in stock_words:
-            for i,line in enumerate(file_content):
-                if word in line:
-                    hits += 1
-                    words_to_append = words_to_append+word+f" (line {i+1}), "
-        if len(words_to_append) != 0:
-            file_names_with_stockWords.append(files[j]+" ---> "+words_to_append)
-    
-    if len(file_names_with_stockWords) == 0:
-        results.insert(END,"None")
-    
-    
-    files_found.config(text = 'Files with hits: '+str(len(file_names_with_stockWords)))
-    occurances.config(text = 'Number of hits: '+str(hits))
-    
-    for eachfile in file_names_with_stockWords:
-        #print(eachfile)
-        Items.append(eachfile)
-        results.insert(END,eachfile)
-        
+    for ind,one_file in enumerate(file_contents_list):
 
+        issues = filter_search(one_file)
+        #print(issues)
+        if len(issues) > 0:
+            file_names_with_issues.append(files[ind]+"--->"+" ".join(str(i) for i in issues))
+
+    for eachfile in file_names_with_issues:
+        print(eachfile)
+        Items.append(eachfile)
+        print(len(eachfile))
+        results.insert(END,eachfile)
+
+
+    
+    #list to contain filenames of such files which contain stock_words
+    # file_names_with_issues = []
+    # hits = 0
+    # for j,file_content in enumerate(file_contents_list):
+    #     words_to_append = ""
+    #     for word in stock_words:
+    #         for i,line in enumerate(file_content):
+    #             if word in line:
+    #                 hits += 1
+    #                 words_to_append = words_to_append+word+f" (line {i+1}), "
+    #     if len(words_to_append) != 0:
+    #         file_names_with_issues.append(files[j]+" ---> "+words_to_append)
+    
+    # if len(file_names_with_issues) == 0:
+    #     results.insert(END,"None")
+    
+    
+    # files_found.config(text = 'Files with hits: '+str(len(file_names_with_issues)))
+    # occurances.config(text = 'Number of hits: '+str(hits))
+    
+    # for eachfile in file_names_with_issues:
+    #     #print(eachfile)
+    #     Items.append(eachfile)
+    #     results.insert(END,eachfile)
+        
+#---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
 def browse():
@@ -132,14 +242,7 @@ def browse():
     entry.delete(0,END)
     entry.insert(0,dirname)
 
-# def browse_root():
-#     global rootname
-#     rootname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select Project folder')
-#     entry_root.delete(0,END)
-#     entry_root.insert(0,rootname)
-#     entry.delete(0,END)
-#     entry.insert(0,'Browser for your Component Directory')
-
+#---------------------------------------------------------------------------------------------------#
 def start_search_thread(event):
     button_search.config(state = DISABLED)
     button_export.config(state = DISABLED)
@@ -149,18 +252,18 @@ def start_search_thread(event):
     progressbar.start()
     search_thread.start()
     root.after(20,check_search_thread)
-
+#---------------------------------------------------------------------------------------------------#
 def check_search_thread():
     if search_thread.is_alive():
         root.after(20,check_search_thread)
     else:
         progressbar.stop()
-
+#---------------------------------------------------------------------------------------------------#
 def get_path(path):
     p_list = path.split('\\')
     return "\\".join(p_list[:-1])
 
-
+#---------------------------------------------------------------------------------------------------#
 def res_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
@@ -169,7 +272,7 @@ def res_listbox_click(event):
         path = value.split(" ---> ")[0]
         lines = value.split(" ---> ")[1].split(',')
         os.startfile(path)
-
+#---------------------------------------------------------------------------------------------------#
 def inp_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
@@ -180,7 +283,7 @@ def inp_listbox_click(event):
     except:
         print("Some error")
 
-  
+ #---------------------------------------------------------------------------------------------------# 
 def search():
     global count
     count = 0
@@ -200,7 +303,7 @@ def search():
     status.config(text = "Scanning Complete\t")
     button_export.config(state = "normal")
     button_search.config(state = "normal")
-
+#---------------------------------------------------------------------------------------------------#
 cid = []
 line_n = []
 auth = []
@@ -232,7 +335,7 @@ def structure(output):
     content = content.replace("\t"," ")
     content = content.replace("  ","")
     line_content.append(content)
-
+#---------------------------------------------------------------------------------------------------#
 def get_dataframe():
 
     df = pd.DataFrame({
@@ -244,7 +347,7 @@ def get_dataframe():
 
 
 
-
+#---------------------------------------------------------------------------------------------------#
 def export():
     
     errorflag = 0
@@ -302,7 +405,7 @@ def export():
     else:
         print("Nothing to export")
             
-
+#---------------------------------------------------------------------------------------------------#
 
 root  = Tk()
 root.config(background = 'light blue')
