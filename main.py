@@ -7,14 +7,139 @@ import time
 import threading
 import subprocess
 import pandas as pd
+import re
 from datetime import datetime, timezone
+from multiprocessing import Pool
 
-stock_words = ["nanospin","getutid","dup2","InterruptHookIdle","nftw","mount_ifs","vfork","pthread_setschedprio"]
 #git log -p
 #git blame -L <start>,<end> full file name
 Items = []
 count = 0
+libm_lib = "abs labs llabs fabs div ldiv lldiv fmod remainder remquo fma fmax fmin fdim nan nanf nanl exp exp2 expm1 log log2 log10 log1p ilogb logb sqrt cbrt hypot pow sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh erf erfc lgamma tgamma ceil floor trunc round lround llround nearbyint rint lrint llrint frexp ldexp modf scalbn scalbln nextafter nexttoward copysign fpclassify isfinite isinf isnan isnormal signbit".split(" ")
+#-------------------------------------------------------------------------------------------------#
+def category1_search(one_file):
+    lines = []
 
+#     reason = '''An application SHALL NOT use getutid() to search the
+# user information file for a particular entry.
+# Instead the application can use getutent() to access successive user
+# information entries until the correct entry is found (or the table is exhausted).'''
+
+    for i,line in enumerate(one_file):
+        if "getutid" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 1 lines: {lines}")
+
+    return 0
+
+#-------------------------------------------------------------------------------------------------#
+# if re.match(regex, content) is not None:
+#   blah..
+def category2_search(one_file):
+    lines = []
+#     reason = ''' Before calling a function in the libm, an application SHOULD call
+# feclearexcept(FE_ALL_EXCEPT).'''
+    func_count = 0
+    fc_count = 0
+    ft_count = 0
+
+    for i,line in enumerate(one_file):
+        for func in libm_lib:
+            myfunc = r'\b'+re.escape(func)+r'\b'
+            if re.match(myfunc, line) is not None:
+                #print(line)
+                lines.append(i+1)
+                func_count += 1
+
+        if re.match(r"\bfeclearexcept\b",line) is not None:
+            fc_count += 1
+        if re.match(r"\bfetestexcept\b",line) is not None:
+            ft_count += 1
+    if func_count !=0:
+        #print(ft_count,func_count,fc_count)
+        if not (func_count == ft_count == fc_count):
+            
+            return (f"Category: 2 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category3_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "dup2" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 3 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category4_search(one_file):
+    lines = []
+    for i,line in enumerate(one_file):
+        if "pthread_setschedprio" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 4 lines: {lines}")
+        
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category5_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category6_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category7_search(one_file):
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category8_search(one_file):
+    
+    return 0
+#-------------------------------------------------------------------------------------------------#
+files_processed = 0
+def filter_search(one_file):
+    global files_processed
+    issues = []
+
+    a = category1_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category2_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category3_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category4_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category5_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category6_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category7_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category8_search(one_file)
+    if a!=0:
+        issues.append(a)
+    files_processed += 1
+    print(files_processed)
+    global status
+    status.config(text = f"Files processed: {files_processed}")
+    #print(issues)
+    return issues
+
+#---------------------------------------------------------------------------------------------------#
 def remove_comments(filepath):
     comment = 0
     final_list = []
@@ -53,7 +178,7 @@ def remove_comments(filepath):
             final_list.append(line)
 
     return final_list
-
+#---------------------------------------------------------------------------------------------------#
 def readFile(filepath):
     global count
     count += 1
@@ -67,10 +192,12 @@ def readFile(filepath):
             lines = [line.rstrip('\n') for line in f]
         return lines
 
+#---------------------------------------------------------------------------------------------------#
+
 def getFiles(path,extensions):
     
     files = []
-    
+    file_names_with_issues = []
     # r=root, d=directories, f = files
     if len(extensions) == 1 and extensions[0] == '':
         # no extension is provided, selelct all files
@@ -94,32 +221,59 @@ def getFiles(path,extensions):
         inputs.insert(END,file)
         file_contents_list.append(readFile(file))
 
-    #list to contain filenames of such files which contain stock_words
-    file_names_with_stockWords = []
-    hits = 0
-    for j,file_content in enumerate(file_contents_list):
-        words_to_append = ""
-        for word in stock_words:
-            for i,line in enumerate(file_content):
-                if word in line:
-                    hits += 1
-                    words_to_append = words_to_append+word+f" (line {i+1}), "
-        if len(words_to_append) != 0:
-            file_names_with_stockWords.append(files[j]+" ---> "+words_to_append)
     
-    if len(file_names_with_stockWords) == 0:
-        results.insert(END,"None")
-    
-    
-    files_found.config(text = 'Files with hits: '+str(len(file_names_with_stockWords)))
-    occurances.config(text = 'Number of hits: '+str(hits))
-    
-    for eachfile in file_names_with_stockWords:
+
+    # for i in range(len(file_contents_list)):
+    #     issues = filter_search(file_contents_list[i])
+    #     #print(issues)
+    #     if len(issues) > 0:
+    #         file_names_with_issues.append(files[i]+"--->"+" ".join(str(i) for i in issues))
+
+    with Pool(4) as p:
+        file_names_with_issues.append(p.map(filter_search, file_contents_list))
+    p.close()
+    p.join()
+
+    inception = file_names_with_issues[0]
+    file_names_with_issues = []
+    for i in range(len(inception)):
+        if inception[i] != []:
+            file_names_with_issues.append(files[i]+"--->"+inception[i][0])
+
+    for eachfile in file_names_with_issues:
         #print(eachfile)
         Items.append(eachfile)
+        #print(len(eachfile))
         results.insert(END,eachfile)
-        
 
+
+    
+    #list to contain filenames of such files which contain stock_words
+    # file_names_with_issues = []
+    # hits = 0
+    # for j,file_content in enumerate(file_contents_list):
+    #     words_to_append = ""
+    #     for word in stock_words:
+    #         for i,line in enumerate(file_content):
+    #             if word in line:
+    #                 hits += 1
+    #                 words_to_append = words_to_append+word+f" (line {i+1}), "
+    #     if len(words_to_append) != 0:
+    #         file_names_with_issues.append(files[j]+" ---> "+words_to_append)
+    
+    # if len(file_names_with_issues) == 0:
+    #     results.insert(END,"None")
+    
+    
+    # files_found.config(text = 'Files with hits: '+str(len(file_names_with_issues)))
+    # occurances.config(text = 'Number of hits: '+str(hits))
+    
+    # for eachfile in file_names_with_issues:
+    #     #print(eachfile)
+    #     Items.append(eachfile)
+    #     results.insert(END,eachfile)
+        
+#---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
 def browse():
@@ -132,14 +286,7 @@ def browse():
     entry.delete(0,END)
     entry.insert(0,dirname)
 
-# def browse_root():
-#     global rootname
-#     rootname = filedialog.askdirectory(parent=root, initialdir="D:\\", title='Select Project folder')
-#     entry_root.delete(0,END)
-#     entry_root.insert(0,rootname)
-#     entry.delete(0,END)
-#     entry.insert(0,'Browser for your Component Directory')
-
+#---------------------------------------------------------------------------------------------------#
 def start_search_thread(event):
     button_search.config(state = DISABLED)
     button_export.config(state = DISABLED)
@@ -149,27 +296,28 @@ def start_search_thread(event):
     progressbar.start()
     search_thread.start()
     root.after(20,check_search_thread)
-
+#---------------------------------------------------------------------------------------------------#
 def check_search_thread():
     if search_thread.is_alive():
         root.after(20,check_search_thread)
     else:
         progressbar.stop()
-
+#---------------------------------------------------------------------------------------------------#
 def get_path(path):
     p_list = path.split('\\')
     return "\\".join(p_list[:-1])
 
-
+#---------------------------------------------------------------------------------------------------#
 def res_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
     value = w.get(index)
     if value != "None":
-        path = value.split(" ---> ")[0]
-        lines = value.split(" ---> ")[1].split(',')
+        path = value.split("--->")[0]
+        #lines = value.split(" ---> ")[1].split(',')
+        print(path)
         os.startfile(path)
-
+#---------------------------------------------------------------------------------------------------#
 def inp_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
@@ -180,7 +328,7 @@ def inp_listbox_click(event):
     except:
         print("Some error")
 
-  
+ #---------------------------------------------------------------------------------------------------# 
 def search():
     global count
     count = 0
@@ -200,7 +348,7 @@ def search():
     status.config(text = "Scanning Complete\t")
     button_export.config(state = "normal")
     button_search.config(state = "normal")
-
+#---------------------------------------------------------------------------------------------------#
 cid = []
 line_n = []
 auth = []
@@ -232,7 +380,7 @@ def structure(output):
     content = content.replace("\t"," ")
     content = content.replace("  ","")
     line_content.append(content)
-
+#---------------------------------------------------------------------------------------------------#
 def get_dataframe():
 
     df = pd.DataFrame({
@@ -244,7 +392,7 @@ def get_dataframe():
 
 
 
-
+#---------------------------------------------------------------------------------------------------#
 def export():
     
     errorflag = 0
@@ -302,137 +450,139 @@ def export():
     else:
         print("Nothing to export")
             
+#---------------------------------------------------------------------------------------------------#
+if __name__ == '__main__':
+    
+
+    root  = Tk()
+    root.config(background = 'light blue')
+    root.geometry("1120x500")
+    root.resizable(width=False, height=False)
+    root.title("DASy Software Restrictions Scanner")
+
+    # layouts
+    # upper = Frame(root,background  = 'light blue')
+    # upper.grid(row = 0,column = 0,padx = 0,pady = 10)
 
 
-root  = Tk()
-root.config(background = 'light blue')
-root.geometry("1120x500")
-root.resizable(width=False, height=False)
-root.title("DASy Software Restrictions Scanner")
 
-# layouts
-# upper = Frame(root,background  = 'light blue')
-# upper.grid(row = 0,column = 0,padx = 0,pady = 10)
+    upper = Frame(root,background  = 'light blue')
+    upper.grid(row = 0,column = 0,padx = 40,pady = 20)
 
+    Labelling = Frame(root,background  = 'light blue')
+    Labelling.grid(row = 1,column = 0)
 
+    lower = Frame(root,background  = 'light blue')
+    lower.grid(row = 2,column = 0)
 
-upper = Frame(root,background  = 'light blue')
-upper.grid(row = 0,column = 0,padx = 40,pady = 20)
+    lower_left = Frame(lower,background  = 'light blue')
+    lower_left.grid(row = 0,column = 0,padx = 10)
 
-Labelling = Frame(root,background  = 'light blue')
-Labelling.grid(row = 1,column = 0)
+    lower_right = Frame(lower,background  = 'light blue')
+    lower_right.grid(row = 0,column = 1,padx = 5)
 
-lower = Frame(root,background  = 'light blue')
-lower.grid(row = 2,column = 0)
+    extension_layout = Frame(root,background  = 'light blue')
+    extension_layout.grid(row = 3,column = 0,pady = 10)
 
-lower_left = Frame(lower,background  = 'light blue')
-lower_left.grid(row = 0,column = 0,padx = 10)
+    forcheckbox = Frame(root,background  = 'light blue')
+    forcheckbox.grid(row = 4,column = 0,pady = 10)
 
-lower_right = Frame(lower,background  = 'light blue')
-lower_right.grid(row = 0,column = 1,padx = 5)
-
-extension_layout = Frame(root,background  = 'light blue')
-extension_layout.grid(row = 3,column = 0,pady = 10)
-
-forcheckbox = Frame(root,background  = 'light blue')
-forcheckbox.grid(row = 4,column = 0,pady = 10)
-
-down = Frame(root,background  = 'light blue')
-down.grid(row = 5,column = 0,pady = 10)
+    down = Frame(root,background  = 'light blue')
+    down.grid(row = 5,column = 0,pady = 10)
 
 
-entry = Entry(upper,width = 100,bd = 3)
-entry.grid(row = 0,column = 0)
-entry.config(font=("Times New Roman", 12))
-entry.insert(0,'Browser for the Project Directory')
+    entry = Entry(upper,width = 100,bd = 3)
+    entry.grid(row = 0,column = 0)
+    entry.config(font=("Times New Roman", 12))
+    entry.insert(0,'Browser for the Project Directory')
 
-button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
-button_browse.grid(row = 0,column = 1)
+    button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
+    button_browse.grid(row = 0,column = 1)
 
-button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
-button_search.grid(row = 0,column = 2,padx = 5)
+    button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
+    button_search.grid(row = 0,column = 2,padx = 5)
 
-button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
-button_export.grid(row = 0,column = 3)
+    button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
+    button_export.grid(row = 0,column = 3)
 
-inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
-inputLabel.grid(row = 0,column = 0)
-inputLabel.config(background = 'light blue')
+    inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
+    inputLabel.grid(row = 0,column = 0)
+    inputLabel.config(background = 'light blue')
 
-resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
-resultLabel.grid(row = 0,column = 1)
-resultLabel.config(background = 'light blue')
+    resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
+    resultLabel.grid(row = 0,column = 1)
+    resultLabel.config(background = 'light blue')
 
-#   input listbox
+    #   input listbox
 
-v_scrollbar_i = Scrollbar(lower_left,orient = VERTICAL,bd = 2) 
-h_scrollbar_i = Scrollbar(lower_left,orient = HORIZONTAL,bd = 2)
+    v_scrollbar_i = Scrollbar(lower_left,orient = VERTICAL,bd = 2) 
+    h_scrollbar_i = Scrollbar(lower_left,orient = HORIZONTAL,bd = 2)
 
-inputs = Listbox(lower_left, width=65, height=12,
-               yscrollcommand = v_scrollbar_i.set,
-               xscrollcommand = h_scrollbar_i.set,
-               bd = 2)
+    inputs = Listbox(lower_left, width=65, height=12,
+                   yscrollcommand = v_scrollbar_i.set,
+                   xscrollcommand = h_scrollbar_i.set,
+                   bd = 2)
 
-v_scrollbar_i.config(command=inputs.yview)
-h_scrollbar_i.config(command=inputs.xview)
+    v_scrollbar_i.config(command=inputs.yview)
+    h_scrollbar_i.config(command=inputs.xview)
 
-v_scrollbar_i.pack(side="right", fill="y")
-h_scrollbar_i.pack(side="bottom", fill="x")
+    v_scrollbar_i.pack(side="right", fill="y")
+    h_scrollbar_i.pack(side="bottom", fill="x")
 
-inputs.pack(side = LEFT)
-inputs.configure(font=("Times New Roman", 12))
+    inputs.pack(side = LEFT)
+    inputs.configure(font=("Times New Roman", 12))
 
-inputs.bind("<Double-Button>",inp_listbox_click)
+    inputs.bind("<Double-Button>",inp_listbox_click)
 
 
-#   results listbox
+    #   results listbox
 
-v_scrollbar = Scrollbar(lower_right,orient = VERTICAL,bd = 2) 
-h_scrollbar = Scrollbar(lower_right,orient = HORIZONTAL,bd = 2)
+    v_scrollbar = Scrollbar(lower_right,orient = VERTICAL,bd = 2) 
+    h_scrollbar = Scrollbar(lower_right,orient = HORIZONTAL,bd = 2)
 
-results = Listbox(lower_right, width=65, height=12,
-               yscrollcommand = v_scrollbar.set,
-               xscrollcommand = h_scrollbar.set,
-               bd = 2)
+    results = Listbox(lower_right, width=65, height=12,
+                   yscrollcommand = v_scrollbar.set,
+                   xscrollcommand = h_scrollbar.set,
+                   bd = 2)
 
-v_scrollbar.config(command=results.yview)
-h_scrollbar.config(command=results.xview)
+    v_scrollbar.config(command=results.yview)
+    h_scrollbar.config(command=results.xview)
 
-v_scrollbar.pack(side="right", fill="y")
-h_scrollbar.pack(side="bottom", fill="x")
+    v_scrollbar.pack(side="right", fill="y")
+    h_scrollbar.pack(side="bottom", fill="x")
 
-results.pack(side = LEFT)
-results.configure(font=("Times New Roman", 12))
+    results.pack(side = LEFT)
+    results.configure(font=("Times New Roman", 12))
 
-results.bind("<Double-Button>",res_listbox_click)
+    results.bind("<Double-Button>",res_listbox_click)
 
-ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
-ext_label.grid(row = 0,column = 0)
-ext_label.config(background = 'light blue')
+    ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
+    ext_label.grid(row = 0,column = 0)
+    ext_label.config(background = 'light blue')
 
-ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
-ext_entry.grid(row = 0,column = 1)
-ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
+    ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
+    ext_entry.grid(row = 0,column = 1)
+    ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
 
-checkCmd = IntVar()
-checkCmd.set(0)
-checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
-checkBox.grid(row = 0, column = 0)
+    checkCmd = IntVar()
+    checkCmd.set(0)
+    checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
+    checkBox.grid(row = 0, column = 0)
 
-status = Label(down,background = 'light blue',font=("Times New Roman", 12))
-status.grid(row = 0, column = 1)
+    status = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    status.grid(row = 0, column = 1)
 
-files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_number.grid(row = 0, column = 2)
+    files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_number.grid(row = 0, column = 2)
 
-files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_found.grid(row = 0, column = 3)
+    files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_found.grid(row = 0, column = 3)
 
-occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
-occurances.grid(row = 0, column = 4)
+    occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    occurances.grid(row = 0, column = 4)
 
-progressbar = ttk.Progressbar(down,mode = 'indeterminate')
-progressbar.grid(row = 0, column = 0)
+    progressbar = ttk.Progressbar(down,mode = 'indeterminate')
+    progressbar.grid(row = 0, column = 0)
 
-#root.iconbitmap('icon1.ico')
-root.mainloop()
+    #root.iconbitmap('icon1.ico')
+    root.mainloop()
