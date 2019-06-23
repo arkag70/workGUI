@@ -9,14 +9,20 @@ import subprocess
 import pandas as pd
 import re
 from datetime import datetime, timezone
-from multiprocessing import Pool
+from multiprocessing import Pool,Value,Lock
 
 #git log -p
 #git blame -L <start>,<end> full file name
 Items = []
 count = 0
+counter = None
 libm_lib = "abs labs llabs fabs div ldiv lldiv fmod remainder remquo fma fmax fmin fdim nan nanf nanl exp exp2 expm1 log log2 log10 log1p ilogb logb sqrt cbrt hypot pow sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh erf erfc lgamma tgamma ceil floor trunc round lround llround nearbyint rint lrint llrint frexp ldexp modf scalbn scalbln nextafter nexttoward copysign fpclassify isfinite isinf isnan isnormal signbit".split(" ")
 #-------------------------------------------------------------------------------------------------#
+def init(args):
+    ''' store the counter for later use '''
+    global counter
+    counter = args
+
 def category1_search(one_file):
     lines = []
 
@@ -105,9 +111,8 @@ def category8_search(one_file):
 #-------------------------------------------------------------------------------------------------#
 files_processed = 0
 def filter_search(one_file):
-    global files_processed
     issues = []
-
+    global counter
     a = category1_search(one_file)
     if a!=0:
         issues.append(a)
@@ -132,11 +137,9 @@ def filter_search(one_file):
     a = category8_search(one_file)
     if a!=0:
         issues.append(a)
-    files_processed += 1
-    print(files_processed)
-    global status
-    status.config(text = f"Files processed: {files_processed}")
-    #print(issues)
+    with counter.get_lock():
+        counter.value += 1
+        print(counter.value)
     return issues
 
 #---------------------------------------------------------------------------------------------------#
@@ -219,6 +222,7 @@ def getFiles(path,extensions):
 
     for file in files:
         inputs.insert(END,file)
+        inputs.yview(END)
         file_contents_list.append(readFile(file))
 
     
@@ -228,23 +232,26 @@ def getFiles(path,extensions):
     #     #print(issues)
     #     if len(issues) > 0:
     #         file_names_with_issues.append(files[i]+"--->"+" ".join(str(i) for i in issues))
+    counter = Value('i', 0)
+    starttime = time.time()
+    text_status.set("Processing....")
+    p = Pool(4,initializer = init, initargs = (counter, ))
+    i = p.map_async(filter_search, file_contents_list, chunksize = 1)
+    i.wait()
+    print(f"Elapsed time: {time.time() - starttime}")
 
-    with Pool(4) as p:
-        file_names_with_issues.append(p.map(filter_search, file_contents_list))
-    p.close()
-    p.join()
+    # inception = file_names_with_issues[0]
+    # file_names_with_issues = []
+    # for i in range(len(inception)):
+    #     if inception[i] != []:
+    #         file_names_with_issues.append(files[i]+"--->"+inception[i][0])
 
-    inception = file_names_with_issues[0]
-    file_names_with_issues = []
-    for i in range(len(inception)):
-        if inception[i] != []:
-            file_names_with_issues.append(files[i]+"--->"+inception[i][0])
-
-    for eachfile in file_names_with_issues:
-        #print(eachfile)
-        Items.append(eachfile)
-        #print(len(eachfile))
-        results.insert(END,eachfile)
+    # for eachfile in file_names_with_issues:
+    #     #print(eachfile)
+    #     Items.append(eachfile)
+    #     #print(len(eachfile))
+    #     results.insert(END,eachfile)
+    #     results.yview(END)
 
 
     
@@ -334,7 +341,7 @@ def search():
     count = 0
     global Items
     Items = []
-    status.config(text = "Scanning....")
+    text_status.set("Scanning....")
     files_number.config(text = "")
     files_found.config(text = "")
     occurances.config(text = "")
@@ -345,7 +352,7 @@ def search():
     #time.sleep(5)
     
     getFiles(entry.get(),extensions)
-    status.config(text = "Scanning Complete\t")
+    text_status.set("Scanning Complete\t")
     button_export.config(state = "normal")
     button_search.config(state = "normal")
 #---------------------------------------------------------------------------------------------------#
@@ -569,7 +576,9 @@ if __name__ == '__main__':
     checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
     checkBox.grid(row = 0, column = 0)
 
-    status = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    global text_status
+    text_status = StringVar()
+    status = Label(down,background = 'light blue',font=("Times New Roman", 12),textvariable = text_status)
     status.grid(row = 0, column = 1)
 
     files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
@@ -583,6 +592,6 @@ if __name__ == '__main__':
 
     progressbar = ttk.Progressbar(down,mode = 'indeterminate')
     progressbar.grid(row = 0, column = 0)
-
     #root.iconbitmap('icon1.ico')
+    print(threading.current_thread().getName())
     root.mainloop()
