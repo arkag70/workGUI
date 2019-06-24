@@ -7,78 +7,117 @@ import time
 import threading
 import subprocess
 import pandas as pd
+import re
 from datetime import datetime, timezone
+from multiprocessing import Pool,Value,Lock,current_process
 
 #git log -p
 #git blame -L <start>,<end> full file name
 Items = []
 count = 0
-
+counter = None
+reason = []
+libm_lib = "abs labs llabs fabs div ldiv lldiv fmod remainder remquo fma fmax fmin fdim nan nanf nanl exp exp2 expm1 log log2 log10 log1p ilogb logb sqrt cbrt hypot pow sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh erf erfc lgamma tgamma ceil floor trunc round lround llround nearbyint rint lrint llrint frexp ldexp modf scalbn scalbln nextafter nexttoward copysign fpclassify isfinite isinf isnan isnormal signbit".split(" ")
 #-------------------------------------------------------------------------------------------------#
+def init(args):
+    ''' store the counter for later use '''
+    global counter
+    counter = args
+
 def category1_search(one_file):
     lines = []
+
+    reason = '''An application SHALL NOT use getutid() to search the
+user information file for a particular entry.
+Instead the application can use getutent() to access successive user
+information entries until the correct entry is found (or the table is exhausted)'''
+
     for i,line in enumerate(one_file):
-        if "vfork" in line:
+        if "getutid" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 1 lines: {lines}")
+        return (f"Category: 1 lines: {lines}, {reason}")
 
     return 0
 
 #-------------------------------------------------------------------------------------------------#
-
+# if re.match(regex, content) is not None:
+#   blah..
 def category2_search(one_file):
     lines = []
+    reason = ''' Before calling a function in the libm, an application SHOULD call feclearexcept(FE_ALL_EXCEPT)'''
+    func_count = 0
+    fc_count = 0
+    ft_count = 0
+
     for i,line in enumerate(one_file):
-        if "nanospin" in line:
-            lines.append(i+1)
-    if len(lines) > 0:
-        return (f"Category: 2 lines: {lines}")
+        for func in libm_lib:
+            myfunc = r'\b'+re.escape(func)+r'\('
+            if re.match(myfunc, line) is not None:
+                #print(line)
+                lines.append(i+1)
+                func_count += 1
+
+        if re.match(r"\bfeclearexcept\b",line) is not None:
+            fc_count += 1
+        if re.match(r"\bfetestexcept\b",line) is not None:
+            ft_count += 1
+    if func_count !=0:
+        #print(ft_count,func_count,fc_count)
+        if not (func_count == ft_count == fc_count):
+            
+            return (f"Category: 2 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category3_search(one_file):
     lines = []
+    reason = ''' dup2() found'''
     for i,line in enumerate(one_file):
         if "dup2" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 3 lines: {lines}")
+        return (f"Category: 3 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category4_search(one_file):
     lines = []
+    reason = '''pthread_setschedprio() found '''
     for i,line in enumerate(one_file):
         if "pthread_setschedprio" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 4 lines: {lines}")
+        return (f"Category: 4 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category5_search(one_file):
+    reason = ''' '''
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category6_search(one_file):
+    reason = ''' '''
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category7_search(one_file):
+    reason = ''' '''
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category8_search(one_file):
+    reason = ''' '''
     return 0
 #-------------------------------------------------------------------------------------------------#
-
+files_processed = 0
 def filter_search(one_file):
     issues = []
-
+    global counter
     a = category1_search(one_file)
     if a!=0:
         issues.append(a)
@@ -103,8 +142,9 @@ def filter_search(one_file):
     a = category8_search(one_file)
     if a!=0:
         issues.append(a)
-    #print(issues)
-    
+    with counter.get_lock():
+        counter.value += 1
+        print(counter.value)
     return issues
 
 #---------------------------------------------------------------------------------------------------#
@@ -161,7 +201,7 @@ def readFile(filepath):
         return lines
 
 #---------------------------------------------------------------------------------------------------#
-
+findings = []
 def getFiles(path,extensions):
     
     files = []
@@ -187,20 +227,46 @@ def getFiles(path,extensions):
 
     for file in files:
         inputs.insert(END,file)
+        inputs.yview(END)
         file_contents_list.append(readFile(file))
 
-    for ind,one_file in enumerate(file_contents_list):
+    
 
-        issues = filter_search(one_file)
-        #print(issues)
-        if len(issues) > 0:
-            file_names_with_issues.append(files[ind]+"--->"+" ".join(str(i) for i in issues))
+    # for i in range(len(file_contents_list)):
+    #     issues = filter_search(file_contents_list[i])
+    #     #print(issues)
+    #     if len(issues) > 0:
+    #         file_names_with_issues.append(files[i]+"--->"+" ".join(str(i) for i in issues))
+    counter = Value('i', 0)
+    starttime = time.time()
+    text_status.set("Processing....")
+    p = Pool(os.cpu_count(),initializer = init, initargs = (counter, ))
+    i = p.map_async(filter_search, file_contents_list, chunksize = 1)
+    p.close()
+    p.join()
+    print(f"Elapsed time: {time.time() - starttime}")
 
+    inception = [lst for lst in i.get()]
+    for i in inception:
+        print(i)
+    hits = 0
+    file_names_with_issues = []
+    for i in range(len(inception)):
+        if inception[i] != []:
+            hits += 1
+            findings.append(inception[i])
+            file_names_with_issues.append(files[i])
+    
+    
+    
+    occurances.config(text = 'Number of hits: '+str(hits))
+    
     for eachfile in file_names_with_issues:
-        print(eachfile)
+        #print(eachfile)
         Items.append(eachfile)
-        print(len(eachfile))
+        #print(len(eachfile))
         results.insert(END,eachfile)
+        results.yview(END)
 
 
     
@@ -235,7 +301,7 @@ initialdir = ""
 def browse():
     global initialdir
     if entry.get() == "Browser for the Project Directory" or entry.get() == '':
-        initialdir = "D:\\"
+        initialdir = "D:\\Arka\\_ResetReasonIDC5\\idc5\\Tools\\"
     else:
         initialdir = entry.get()
     dirname = filedialog.askdirectory(parent=root, initialdir=initialdir, title='Choose your Project Directory')
@@ -269,9 +335,16 @@ def res_listbox_click(event):
     index = w.curselection()[0]
     value = w.get(index)
     if value != "None":
-        path = value.split(" ---> ")[0]
-        lines = value.split(" ---> ")[1].split(',')
+        path = value.split("--->")[0]
+        #lines = value.split(" ---> ")[1].split(',')
+        print(path)
         os.startfile(path)
+#---------------------------------------------------------------------------------------------------#
+def res_listbox_click1(event):
+    w = event.widget
+    index = w.curselection()[0]
+    cat_list.delete(0,END)
+    cat_list.insert(END,findings[index])
 #---------------------------------------------------------------------------------------------------#
 def inp_listbox_click(event):
     w = event.widget
@@ -289,7 +362,7 @@ def search():
     count = 0
     global Items
     Items = []
-    status.config(text = "Scanning....")
+    text_status.set("Scanning....")
     files_number.config(text = "")
     files_found.config(text = "")
     occurances.config(text = "")
@@ -300,7 +373,7 @@ def search():
     #time.sleep(5)
     
     getFiles(entry.get(),extensions)
-    status.config(text = "Scanning Complete\t")
+    text_status.set("Scanning Complete\t")
     button_export.config(state = "normal")
     button_search.config(state = "normal")
 #---------------------------------------------------------------------------------------------------#
@@ -406,136 +479,164 @@ def export():
         print("Nothing to export")
             
 #---------------------------------------------------------------------------------------------------#
+if __name__ == '__main__':
+    
 
-root  = Tk()
-root.config(background = 'light blue')
-root.geometry("1120x500")
-root.resizable(width=False, height=False)
-root.title("DASy Software Restrictions Scanner")
+    root  = Tk()
+    root.config(background = 'light blue')
+    root.geometry("1120x700")
+    root.resizable(width=False, height=False)
+    root.title("DASy Software Restrictions Scanner")
 
-# layouts
-# upper = Frame(root,background  = 'light blue')
-# upper.grid(row = 0,column = 0,padx = 0,pady = 10)
-
-
-
-upper = Frame(root,background  = 'light blue')
-upper.grid(row = 0,column = 0,padx = 40,pady = 20)
-
-Labelling = Frame(root,background  = 'light blue')
-Labelling.grid(row = 1,column = 0)
-
-lower = Frame(root,background  = 'light blue')
-lower.grid(row = 2,column = 0)
-
-lower_left = Frame(lower,background  = 'light blue')
-lower_left.grid(row = 0,column = 0,padx = 10)
-
-lower_right = Frame(lower,background  = 'light blue')
-lower_right.grid(row = 0,column = 1,padx = 5)
-
-extension_layout = Frame(root,background  = 'light blue')
-extension_layout.grid(row = 3,column = 0,pady = 10)
-
-forcheckbox = Frame(root,background  = 'light blue')
-forcheckbox.grid(row = 4,column = 0,pady = 10)
-
-down = Frame(root,background  = 'light blue')
-down.grid(row = 5,column = 0,pady = 10)
+    # layouts
+    # upper = Frame(root,background  = 'light blue')
+    # upper.grid(row = 0,column = 0,padx = 0,pady = 10)
 
 
-entry = Entry(upper,width = 100,bd = 3)
-entry.grid(row = 0,column = 0)
-entry.config(font=("Times New Roman", 12))
-entry.insert(0,'Browser for the Project Directory')
 
-button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
-button_browse.grid(row = 0,column = 1)
+    upper = Frame(root,background  = 'light blue')
+    upper.grid(row = 0,column = 0,padx = 40,pady = 20)
 
-button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
-button_search.grid(row = 0,column = 2,padx = 5)
+    Labelling = Frame(root,background  = 'light blue')
+    Labelling.grid(row = 1,column = 0)
 
-button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
-button_export.grid(row = 0,column = 3)
+    lower = Frame(root,background  = 'light blue')
+    lower.grid(row = 2,column = 0)
 
-inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
-inputLabel.grid(row = 0,column = 0)
-inputLabel.config(background = 'light blue')
+    lower_left = Frame(lower,background  = 'light blue')
+    lower_left.grid(row = 0,column = 0,padx = 10)
 
-resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
-resultLabel.grid(row = 0,column = 1)
-resultLabel.config(background = 'light blue')
+    lower_right = Frame(lower,background  = 'light blue')
+    lower_right.grid(row = 0,column = 1,padx = 5)
 
-#   input listbox
+    extension_layout = Frame(root,background  = 'light blue')
+    extension_layout.grid(row = 3,column = 0,pady = 10)
 
-v_scrollbar_i = Scrollbar(lower_left,orient = VERTICAL,bd = 2) 
-h_scrollbar_i = Scrollbar(lower_left,orient = HORIZONTAL,bd = 2)
+    forcheckbox = Frame(root,background  = 'light blue')
+    forcheckbox.grid(row = 4,column = 0,pady = 10)
 
-inputs = Listbox(lower_left, width=65, height=12,
-               yscrollcommand = v_scrollbar_i.set,
-               xscrollcommand = h_scrollbar_i.set,
-               bd = 2)
+    category_field = Frame(root,background  = 'light blue')
+    category_field.grid(row = 5,column = 0,pady = 10)
 
-v_scrollbar_i.config(command=inputs.yview)
-h_scrollbar_i.config(command=inputs.xview)
-
-v_scrollbar_i.pack(side="right", fill="y")
-h_scrollbar_i.pack(side="bottom", fill="x")
-
-inputs.pack(side = LEFT)
-inputs.configure(font=("Times New Roman", 12))
-
-inputs.bind("<Double-Button>",inp_listbox_click)
+    down = Frame(root,background  = 'light blue')
+    down.grid(row = 6,column = 0,pady = 10)
 
 
-#   results listbox
+    entry = Entry(upper,width = 100,bd = 3)
+    entry.grid(row = 0,column = 0)
+    entry.config(font=("Times New Roman", 12))
+    entry.insert(0,'Browser for the Project Directory')
 
-v_scrollbar = Scrollbar(lower_right,orient = VERTICAL,bd = 2) 
-h_scrollbar = Scrollbar(lower_right,orient = HORIZONTAL,bd = 2)
+    button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
+    button_browse.grid(row = 0,column = 1)
 
-results = Listbox(lower_right, width=65, height=12,
-               yscrollcommand = v_scrollbar.set,
-               xscrollcommand = h_scrollbar.set,
-               bd = 2)
+    button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
+    button_search.grid(row = 0,column = 2,padx = 5)
 
-v_scrollbar.config(command=results.yview)
-h_scrollbar.config(command=results.xview)
+    button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
+    button_export.grid(row = 0,column = 3)
 
-v_scrollbar.pack(side="right", fill="y")
-h_scrollbar.pack(side="bottom", fill="x")
+    inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
+    inputLabel.grid(row = 0,column = 0)
+    inputLabel.config(background = 'light blue')
 
-results.pack(side = LEFT)
-results.configure(font=("Times New Roman", 12))
+    resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
+    resultLabel.grid(row = 0,column = 1)
+    resultLabel.config(background = 'light blue')
 
-results.bind("<Double-Button>",res_listbox_click)
+    #   input listbox
 
-ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
-ext_label.grid(row = 0,column = 0)
-ext_label.config(background = 'light blue')
+    v_scrollbar_i = Scrollbar(lower_left,orient = VERTICAL,bd = 2) 
+    h_scrollbar_i = Scrollbar(lower_left,orient = HORIZONTAL,bd = 2)
 
-ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
-ext_entry.grid(row = 0,column = 1)
-ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
+    inputs = Listbox(lower_left, width=65, height=12,
+                   yscrollcommand = v_scrollbar_i.set,
+                   xscrollcommand = h_scrollbar_i.set,
+                   bd = 2)
 
-checkCmd = IntVar()
-checkCmd.set(0)
-checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
-checkBox.grid(row = 0, column = 0)
+    v_scrollbar_i.config(command=inputs.yview)
+    h_scrollbar_i.config(command=inputs.xview)
 
-status = Label(down,background = 'light blue',font=("Times New Roman", 12))
-status.grid(row = 0, column = 1)
+    v_scrollbar_i.pack(side="right", fill="y")
+    h_scrollbar_i.pack(side="bottom", fill="x")
 
-files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_number.grid(row = 0, column = 2)
+    inputs.pack(side = LEFT)
+    inputs.configure(font=("Times New Roman", 12))
 
-files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
-files_found.grid(row = 0, column = 3)
+    inputs.bind("<Double-Button>",inp_listbox_click)
 
-occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
-occurances.grid(row = 0, column = 4)
 
-progressbar = ttk.Progressbar(down,mode = 'indeterminate')
-progressbar.grid(row = 0, column = 0)
+    #   results listbox
 
-#root.iconbitmap('icon1.ico')
-root.mainloop()
+    v_scrollbar = Scrollbar(lower_right,orient = VERTICAL,bd = 2) 
+    h_scrollbar = Scrollbar(lower_right,orient = HORIZONTAL,bd = 2)
+
+    results = Listbox(lower_right, width=65, height=12,
+                   yscrollcommand = v_scrollbar.set,
+                   xscrollcommand = h_scrollbar.set,
+                   bd = 2)
+
+    v_scrollbar.config(command=results.yview)
+    h_scrollbar.config(command=results.xview)
+
+    v_scrollbar.pack(side="right", fill="y")
+    h_scrollbar.pack(side="bottom", fill="x")
+
+    results.pack(side = LEFT)
+    results.configure(font=("Times New Roman", 12))
+
+    results.bind("<Double-Button>",res_listbox_click)
+    results.bind("<<ListboxSelect>>",res_listbox_click1)
+
+    ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
+    ext_label.grid(row = 0,column = 0)
+    ext_label.config(background = 'light blue')
+
+    ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
+    ext_entry.grid(row = 0,column = 1)
+    ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
+
+    checkCmd = IntVar()
+    checkCmd.set(0)
+    checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
+    checkBox.grid(row = 0, column = 0)
+
+    cat_label = Label(category_field,text = "Warnings: ",font=("Times New Roman", 12))
+    cat_label.pack(side = LEFT)
+    cat_label.config(background = 'light blue')
+
+    v_scrollbar_c = Scrollbar(category_field,orient = VERTICAL,bd = 2) 
+    h_scrollbar_c = Scrollbar(category_field,orient = HORIZONTAL,bd = 2)
+
+    cat_list = Listbox(category_field, width=100, height=8,
+                   yscrollcommand = v_scrollbar_c.set,
+                   xscrollcommand = h_scrollbar_c.set,
+                   bd = 2)
+
+    v_scrollbar_c.config(command=cat_list.yview)
+    h_scrollbar_c.config(command=cat_list.xview)
+
+    v_scrollbar_c.pack(side="right", fill="y")
+    h_scrollbar_c.pack(side="bottom", fill="x")
+
+    cat_list.pack(side = LEFT)
+    cat_list.configure(font=("Times New Roman", 12))
+
+    global text_status
+    text_status = StringVar()
+    status = Label(down,background = 'light blue',font=("Times New Roman", 12),textvariable = text_status)
+    status.grid(row = 0, column = 1)
+
+    files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_number.grid(row = 0, column = 2)
+
+    files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_found.grid(row = 0, column = 3)
+
+    occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    occurances.grid(row = 0, column = 4)
+
+    progressbar = ttk.Progressbar(down,mode = 'indeterminate')
+    progressbar.grid(row = 0, column = 0)
+    #root.iconbitmap('icon1.ico')
+    root.mainloop()
