@@ -45,7 +45,8 @@ information entries until the correct entry is found (or the table is exhausted)
 #   blah..
 def category2_search(one_file):
     lines = []
-    reason = ''' Before calling a function in the libm, an application SHOULD call feclearexcept(FE_ALL_EXCEPT)'''
+    reason = '''Before calling a function in the libm, an application SHOULD call feclearexcept(FE_ALL_EXCEPT).
+    After calling a function in the libm, an application SHOULD call fetestexcept().'''
     func_count = 0
     fc_count = 0
     ft_count = 0
@@ -73,9 +74,9 @@ def category2_search(one_file):
 
 def category3_search(one_file):
     lines = []
-    reason = ''' dup2() found'''
+    reason = '''dup2() found'''
     for i,line in enumerate(one_file):
-        if "dup2" in line:
+        if "dup2(" in line:
             lines.append(i+1)
     if len(lines) > 0:
         return (f"Category: 3 lines: {lines}:- {reason}")
@@ -85,32 +86,71 @@ def category3_search(one_file):
 
 def category4_search(one_file):
     lines = []
-    reason = '''pthread_setschedprio() found '''
-    for i,line in enumerate(one_file):
-        if "pthread_setschedprio" in line:
-            lines.append(i+1)
-    if len(lines) > 0:
-        return (f"Category: 4 lines: {lines}:- {reason}")
+    reason = ''''''
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category5_search(one_file):
-    reason = ''' '''
+    lines = []
+    reason = '''By default the clock period (rate at which clock ticks arrive, in
+nanoseconds) will be 1 ms. If any other value is required, the value SHOULD be established by calling 
+ClockPeriod() with the desired value at boot time, as early as possible, and ClockPeriod() shall be used 
+only for reading the clock period thereafter. '''
+    
+    for i,line in enumerate(one_file):
+        if "ClockPeriod(" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 5 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category6_search(one_file):
-    reason = ''' '''
+    lines=[]
+    reason = '''An application SHALL NOT invoke the mount_ifs utility.'''
+
+    for i,line in enumerate(one_file):
+        if "mount_ifs" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 6 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category7_search(one_file):
-    reason = ''' '''
+    lines = []
+    reason = '''A safety application SHALL NOT use the vfork() API. '''
+
+    for i,line in enumerate(one_file):
+        if "vfork(" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"Category: 7 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category8_search(one_file):
+    reason = ''' '''
+    return 0
+#-------------------------------------------------------------------------------------------------#
+def category9_search(one_file):
+    reason = ''' '''
+    return 0
+#-------------------------------------------------------------------------------------------------#
+def category10_search(one_file):
+    reason = ''' '''
+    return 0
+#-------------------------------------------------------------------------------------------------#
+def category11_search(one_file):
+    reason = ''' '''
+    return 0
+#-------------------------------------------------------------------------------------------------#
+def category12_search(one_file):
+    reason = ''' '''
+    return 0
+#-------------------------------------------------------------------------------------------------#
+def category13_search(one_file):
     reason = ''' '''
     return 0
 #-------------------------------------------------------------------------------------------------#
@@ -247,8 +287,7 @@ def getFiles(path,extensions):
     print(f"Elapsed time: {time.time() - starttime}")
 
     inception = [lst for lst in i.get()]
-    for i in inception:
-        print(i)
+
     hits = 0
     file_names_with_issues = []
     for i in range(len(inception)):
@@ -301,7 +340,7 @@ initialdir = ""
 def browse():
     global initialdir
     if entry.get() == "Browser for the Project Directory" or entry.get() == '':
-        initialdir = "D:\\Arka\\_ResetReasonIDC5\\idc5\\Tools\\"
+        initialdir = "D:\\"
     else:
         initialdir = entry.get()
     dirname = filedialog.askdirectory(parent=root, initialdir=initialdir, title='Choose your Project Directory')
@@ -337,21 +376,24 @@ def res_listbox_click(event):
     if value != "None":
         path = value.split("--->")[0]
         #lines = value.split(" ---> ")[1].split(',')
-        print(path)
         os.startfile(path)
 #---------------------------------------------------------------------------------------------------#
 def res_listbox_click1(event):
-    w = event.widget
-    index = w.curselection()[0]
-    cat_list.delete(0,END)
-    cat_list.insert(END,findings[index])
+    try:
+        w = event.widget
+        index = w.curselection()[0]
+        cat_list.delete(0,END)
+        fulltext = findings[index]
+        for i in fulltext:
+            cat_list.insert(END,i)
+    except:
+        print("Some error")
 #---------------------------------------------------------------------------------------------------#
 def inp_listbox_click(event):
     w = event.widget
     index = w.curselection()[0]
     value = w.get(index)
     try:
-        print(value)
         os.startfile(value)
     except:
         print("Some error")
@@ -361,6 +403,8 @@ def search():
     global count
     count = 0
     global Items
+    global findings
+    findings = []
     Items = []
     text_status.set("Scanning....")
     files_number.config(text = "")
