@@ -371,7 +371,6 @@ def check_search_thread():
 #---------------------------------------------------------------------------------------------------#
 def get_path(path):
     p_list = path.split('\\')
-    print(p_list)
     return "\\".join(p_list[:-1])
 
 #---------------------------------------------------------------------------------------------------#
@@ -489,23 +488,19 @@ def export():
     if len(Items) > 0:
         #with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
         output = ""
-        line_numbers = []
         for onefile in Items:
             path = onefile.split("--->")[0]
             #print(path)
             #output = output + path + "\n\n"
             lines = onefile.split("--->")[1].split(', ')
             lines = lines[:-1]
-            line_numbers.append(lines)
             # for line in lines:
             #     try:
             #         line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
             #     except:
             #         pass
             # print(line_numbers)
-        #print(line_numbers)
-            for line in line_numbers:
-                print(path)
+            for line in lines:
                 #git blame --line-porcelain file
                 try:
                     p = subprocess.Popen(["git", "blame","--line-porcelain","-L", line+","+line, path],cwd = get_path(path),stdout = subprocess.PIPE)
