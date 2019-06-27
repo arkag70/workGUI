@@ -310,9 +310,6 @@ def filter_search(one_file):
     a = category8_search(one_file)
     if a!=0:
         issues.append(a)
-    a = category8_search(one_file)
-    if a!=0:
-        issues.append(a)
     a = category9_search(one_file)
     if a!=0:
         issues.append(a)
@@ -477,7 +474,6 @@ def getFiles(path,extensions):
     for r in requirements.split(' '):
         linewise_req.append(r) 
     linewise_req = linewise_req[:-1]
-    print(findings)
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -586,7 +582,6 @@ rid = []
 
 def structure(output):
 
-    print(f"{linewise_req}-->{len(linewise_req)}")
     cid.append(output[0].split(' ')[0])
     line_n.append(output[0].split(' ')[2])
     committer.append(" ".join(output[5].split(' ')[1:]))
