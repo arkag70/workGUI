@@ -401,7 +401,7 @@ req = []
 requirements = ""
 linewise_req = []
 def getFiles(path,extensions):
-    
+    global linewise_req
     files = []
     file_names_with_issues = []
     # r=root, d=directories, f = files
@@ -476,7 +476,8 @@ def getFiles(path,extensions):
     requirements = requirements.replace("lines ","")
     for r in requirements.split(' '):
         linewise_req.append(r) 
-    print(linewise_req)
+    linewise_req = linewise_req[:-1]
+    print(findings)
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -585,8 +586,7 @@ rid = []
 
 def structure(output):
 
-
-    print(linewise_req+","+len(linewise_req))
+    print(f"{linewise_req}-->{len(linewise_req)}")
     cid.append(output[0].split(' ')[0])
     line_n.append(output[0].split(' ')[2])
     committer.append(" ".join(output[5].split(' ')[1:]))
@@ -602,12 +602,11 @@ def structure(output):
     content = content.replace("\t"," ")
     content = content.replace("  ","")
     line_content.append(content)
-    print(len(cid),len(line_n),len(linewise_req))
 #---------------------------------------------------------------------------------------------------#
 def get_dataframe():
 
     df = pd.DataFrame({
-        "Commit_Id" : cid, "Committer" : committer, "Committer_Mail" : c_mail,
+        "Requirement_Id" : linewise_req, "Commit_Id" : cid, "Committer" : committer, "Committer_Mail" : c_mail,
         "Committer_Time" : c_time, "Summary" : summary, "File" : file_name, "Line_Number" : line_n, "Line" : line_content
         })
     return df
@@ -670,12 +669,6 @@ def export():
             print("Blame Report is created")
         else:
             print("No Report is created")
-        global linewise_req
-        linewise_req = []
-        global req
-        global requirements
-        req = []
-        requirements = ""
                 
     
     # else:
