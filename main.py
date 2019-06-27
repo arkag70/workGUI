@@ -397,6 +397,9 @@ def readFile(filepath):
 
 #---------------------------------------------------------------------------------------------------#
 findings = []
+req = []
+requirements = ""
+linewise_req = []
 def getFiles(path,extensions):
     
     files = []
@@ -418,10 +421,6 @@ def getFiles(path,extensions):
                     if ext.lower() in extensions:
                         files.append(os.path.join(r, file))
     
-    for file in files:
-        if checkSafety.get() == 1:
-            # only safety files to be chosen
-            pass
     file_contents_list = []
 
     for file in files:
@@ -451,7 +450,6 @@ def getFiles(path,extensions):
     
     
     occurances.config(text = 'Number of hits: '+str(hits))
-    
     for index,eachfile in enumerate(file_names_with_issues):
         #print(eachfile)
         onefile_line =[]
@@ -460,14 +458,25 @@ def getFiles(path,extensions):
             lines = ""
             for find in onefile_find:
                 l_temp = find.split('[')[1].split(']')[0]
-                lines += l_temp+", " 
+                lines += l_temp+", "
 
             onefile_line.append(lines)
         Items.append(f"{eachfile}--->{onefile_line[index]}")
         #print(len(eachfile))
         results.insert(END,eachfile)
         results.yview(END)
-        
+
+    for file in findings:
+        for i in file:
+            req.append(i.split(':')[:2])
+    for r in req:
+        lines = r[1].split('[')[1].split(']')[0].split(',')
+        global requirements
+        requirements += (r[0]+" ") * (len(lines))
+    requirements = requirements.replace("lines ","")
+    for r in requirements.split(' '):
+        linewise_req.append(r) 
+    print(linewise_req)
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -509,7 +518,6 @@ def res_listbox_click(event):
     value = w.get(index)
     if value != "None":
         path = value
-        #f_line = findings[index][0].split('[')[1].split(']')[0].split(',')[0]
         os.startfile(path)
 #---------------------------------------------------------------------------------------------------#
 def res_listbox_click1(event):
@@ -535,9 +543,15 @@ def inp_listbox_click(event):
  #---------------------------------------------------------------------------------------------------# 
 def search():
     global count
+    global req
+    global requirements
+    req = []
+    requirements = ""
     count = 0
     global Items
     global findings
+    global linewise_req
+    linewise_req = []
     findings = []
     Items = []
     text_status.set("Scanning....")
@@ -567,10 +581,12 @@ c_time = []
 summary = []
 file_name = []
 line_content = []
+rid = []
 
 def structure(output):
 
 
+    print(linewise_req+","+len(linewise_req))
     cid.append(output[0].split(' ')[0])
     line_n.append(output[0].split(' ')[2])
     committer.append(" ".join(output[5].split(' ')[1:]))
@@ -586,6 +602,7 @@ def structure(output):
     content = content.replace("\t"," ")
     content = content.replace("  ","")
     line_content.append(content)
+    print(len(cid),len(line_n),len(linewise_req))
 #---------------------------------------------------------------------------------------------------#
 def get_dataframe():
 
@@ -602,6 +619,7 @@ def get_dataframe():
 def export():
     
     errorflag = 0
+    rid[:] = []
     cid[:] = []
     line_n[:] = []
     auth[:] = []
@@ -646,17 +664,18 @@ def export():
             if os.path.isdir(new_dir) == False:
                 os.makedirs(new_dir)
 
-            if checkSafety.get() == 0:
-                report_file_name = "Project_Application_Deviation_Report"
-            else:
-                report_file_name = "Safety_Application_Deviation_Report"
-
-            writer = pd.ExcelWriter(new_dir+report_file_name+str(len(os.listdir(new_dir))+1)+'.xlsx')
+            writer = pd.ExcelWriter(new_dir+"Project_Application_Deviation_Report"+str(len(os.listdir(new_dir))+1)+'.xlsx')
             df.to_excel(writer,'BlameSheet')
             writer.save()
             print("Blame Report is created")
         else:
             print("No Report is created")
+        global linewise_req
+        linewise_req = []
+        global req
+        global requirements
+        req = []
+        requirements = ""
                 
     
     # else:
@@ -778,11 +797,6 @@ if __name__ == '__main__':
     checkCmd.set(0)
     checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
     checkBox.grid(row = 0, column = 0)
-
-    checkSafety = IntVar()
-    checkSafety.set(0)
-    checkBoxS = Checkbutton(forcheckbox, variable=checkSafety, onvalue=1, offvalue=0, text="Only Safety Applications",background="light blue")
-    checkBoxS.grid(row = 0, column = 1)
 
     cat_label = Label(category_field,text = "Warnings: ",font=("Times New Roman", 12))
     cat_label.pack(side = LEFT)
