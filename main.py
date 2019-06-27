@@ -33,10 +33,10 @@ Instead the application can use getutent() to access successive user
 information entries until the correct entry is found (or the table is exhausted)'''
 
     for i,line in enumerate(one_file):
-        if "getutid" in line:
+        if "getutid(" in line or "getutid (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 1 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_1676 lines: {lines}:- {reason}")
 
     return 0
 
@@ -67,31 +67,46 @@ def category2_search(one_file):
         #print(ft_count,func_count,fc_count)
         if not (func_count == ft_count == fc_count):
             
-            return (f"Category: 2 lines: {lines}:- {reason}")
+            return (f"StakeholderRS_Safety_DASy_3330_3329_3247 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category3_search(one_file):
     lines = []
-    reason = '''dup2() found.
-    An application SHALL NOT invoke the dup2 function while
+    reason = '''An application SHALL NOT invoke the dup2 function while
 simultaneously creating other new file descriptors.
 The dup2 function can erroneously return EBADF if another thread in the
 application creates a new file descriptor that matches the dup2 newfd parameter
 at the same time the dup2 function is executing.'''
     for i,line in enumerate(one_file):
-        if "dup2(" in line:
+        if "dup2(" in line or "dup2 (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 3 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_2597 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category4_search(one_file):
     lines = []
-    reason = ''''''
+    reason = '''The QOS SHOULD be configured to ensure mutexes that are shared between processes are safe.
+
+Note that in order to share a mutex, two processes must also share the memory in which the mutex resides.
+If an application needs to share a mutex between separate processes, then it must either expose itself to potential interference from unrelated processes, disable priority inheritance, or accept a performance penalty as all operations on the shared mutex must enter the kernel.
+Normal kernel configuration does not require that all mutex operations enter the kernel. This enhances the performance of mutex operations but, in such a system, a thread that corrupts a mutex (accidentally or maliciously) can cause the priority of an unrelated thread to be boosted to the first thread’s priority through the priority inheritance mechanism.
+
+The kernel can be configured to reject attempts to lock shared mutexes that would cause a priority inheritance unless all mutex locking operations enter the kernel. This has a significant impact on the performance of shared mutexes, but guarantees that non-cooperating threads cannot interfere with each other. In order to use shared mutexes in a safe manner:
+ The system must be configured to require that all mutex operations on shared mutexes that support priority inheritance must enter the kernel. This may be achieved by specifying the -s command-line option to procnto. (Note that this is the default for the QOS; see section A.3.2 Recommended procnto command-line options.)
+ All mutexes that are to be shared between processes must either disable priority inheritance by setting the PTHREAD_PRIO_NONE flag or must be explicitly identified as a shared mutex by setting the PTHREAD_PROCESS_SHARED flag.
+
+In a system where the -s option is specified, an attempt to lock a shared priority-inheriting mutex that does not have the THREAD_PROCESS_SHARED flag set will fail and return an error code. '''
+
+    for i,line in enumerate(one_file):
+        if ("pthread_mutexattr_getpshared(" in line or "pthread_mutexattr_getpshared (" in line) and not ("PTHREAD_PROCESS_SHARED" in line or "PTHREAD_PRIO_NONE" in line):
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_3315 lines: {lines}:- {reason}")
         
     return 0
 #-------------------------------------------------------------------------------------------------#
@@ -104,10 +119,10 @@ and ClockPeriod() shall be used only for reading the clock period thereafter.\n\
 same CPU that handles clock interrupts. '''
     
     for i,line in enumerate(one_file):
-        if "ClockPeriod(" in line:
+        if "ClockPeriod(" in line or "ClockPeriod (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 5 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_3309_2896 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
@@ -119,7 +134,7 @@ def category6_search(one_file):
         if "mount_ifs" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 6 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_2600 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
@@ -128,10 +143,10 @@ def category7_search(one_file):
     reason = '''A safety application SHALL NOT use the vfork() API. '''
 
     for i,line in enumerate(one_file):
-        if "vfork(" in line:
+        if "vfork(" in line or "vfork (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 7 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_2888 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 
@@ -143,10 +158,10 @@ The nftw function may use one file descriptor for each level of the tree, regard
 of the value of the depth parameter provided. '''
 
     for i,line in enumerate(one_file):
-        if "nftw(" in line:
+        if "nftw(" in line or "nftw (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 8 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_2599 lines: {lines}:- {reason}")
 
     return 0
 #-------------------------------------------------------------------------------------------------#
@@ -160,29 +175,113 @@ Note that the InterruptHookIdle() function has been deprecated. The InterruptHoo
 function, which does not suffer from this problem, should
 be used instead. '''
     for i,line in enumerate(one_file):
-        if "InterruptHookIdle(" in line:
+        if "InterruptHookIdle(" in line or "InterruptHookIdle (" in line:
             lines.append(i+1)
     if len(lines) > 0:
-        return (f"Category: 9 lines: {lines}:- {reason}")
+        return (f"StakeholderRS_Safety_DASy_2598 lines: {lines}:- {reason}")
 
     return 0
 #-------------------------------------------------------------------------------------------------#
 def category10_search(one_file):
-    reason = ''' '''
+    lines = []
+    reason = '''Description
+It is highly recommended that the system does not use the  high precision event timer (HPET) functions derived 
+from the Platform Control Cluster (PCC) as sub-part of the ITSS during the Power On Reset, Initialization and 
+Operational state of the safety critical application.
+Rationale
+The high precision event timer functions derived from platform control cluster were considered as not safety 
+relevant during the failure analysis.
+Informative
+Instead of HPET as a source of timer interrupts, the Atom core internal timers shall be used. '''
+    
+    for i,line in enumerate(one_file):
+        if "use_hpet_timer" in line or "init_qtime_hpet(" in line or "init_qtime_hpet (" in line:
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_2859 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
 def category11_search(one_file):
-    reason = ''' '''
+    lines = []
+    reason = '''Safety applications SHOULD make use of the functionality provided by the _NTO_COF_NOEVENT and/or _NTO_COF_REG_EVENTS connection flags, 
+    specified to the ConnectAttach() or ConnectFlags() APIS, to ensure application isolation.
+    Servers may accidentally or maliciously deliver events to clients that the clients are not prepared to handle. If the _NTO_COF_NOEVENT flag is specified for a connection, 
+    then the server is forbidden from delivering any events to the client. 
+    If the _NTO_COF_REG_EVENTS flag is specified for a connection, then the server is forbidden from delivering any event to the client excepting those that the client has registered using the MsgRegisterEvent() API. '''
+
+    for i,line in enumerate(one_file):
+        if ("ConnectAttach(" in line or "ConnectAttach (" in line or "ConnectFlags(" in line or "ConnectFlags (" in line) and (("_NTO_COF_NOEVENT" not in line) or ("_NTO_COF_REG_EVENTS" not in line)):  
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_3316 lines: {lines}:- {reason}")
+
     return 0
 #-------------------------------------------------------------------------------------------------#
 def category12_search(one_file):
-    reason = ''' '''
+    lines = []
+    reason = '''The developer SHALL ensure that, if an interrupt is configured
+to be lazy, careful analysis shows that any potential data loss will not
+result in a violation of an application’s safety requirements. '''
+
+    for i,line in enumerate(one_file):
+        if "InterruptCharacteristic(" in line or "InterruptCharacteristic (" in line:  
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_2589 lines: {lines}:- {reason}")
+
     return 0
 #-------------------------------------------------------------------------------------------------#
 def category13_search(one_file):
-    reason = ''' '''
+    #safety
+    lines = []
+    reason = '''A developer SHOULD NOT use inline assembly in the development of an application that implements a safety function.
+The use of inline assembly is discouraged, as the practice is highly error prone. Errors introduced in inline assembly are often subtle and difficult to detect. '''
+    for i,line in enumerate(one_file):
+        if "asm(" in line or "asm (" in line or "__asm__(" in line or "__asm__ (" in line:  
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_2928 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
+def category14_search(one_file):
+    #safety
+    lines = []
+    reason = '''A safety application SHALL NOT modify MALLOC_BAND_CONFIG_STR after system start-up '''
+    for i,line in enumerate(one_file):
+        if ("setenv(" in line or "setenv (" in line) and ("MALLOC_BAND_CONFIG_STR" in line):  
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_2889 lines: {lines}:- {reason}")
+    return 0
+#-------------------------------------------------------------------------------------------------#
+# def category15_search(one_file):
+#     #safety
+#     lines = []
+#     reason = '''An application SHALL set the LD_BIND_NOW environment variable to ensure immediate symbol resolution during application loading. '''
+#     for i,line in enumerate(one_file):
+#         if ("setenv(" in line or "setenv (" in line) and ("LD_BIND_NOW" in line):  
+#             lines.append(i+1)
+#     if len(lines) > 0:
+#         return (f"StakeholderRS_Safety_DASy_2602 lines: {lines}:- {reason}")
+#     return 0
+#-------------------------------------------------------------------------------------------------#
+
+def category16_search(one_file):
+    #safety
+    lines = []
+    reason = '''A developer SHOULD NOT use thread cancellation in the development of an application that implements a safety function.
+
+The use of thread cancellation is highly discouraged, as the practice is highly error prone and can lead to unintended resource leaks,
+ execution behaviours because of unintended cancellation or the masking of cancellation due to changing the cancellation state.
+ Errors introduced with thread cancellation are often subtle and difficult to detect and thus we recommend using a controlled and architected thread termination lifecycle that is co-ordinated. '''
+    for i,line in enumerate(one_file):
+        if "pthread_cancel(" in line or "pthread_cancel (" in line:  
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_3321 lines: {lines}:- {reason}")
+    return 0
+#-------------------------------------------------------------------------------------------------#
+
 files_processed = 0
 def filter_search(one_file):
     issues = []
@@ -209,6 +308,33 @@ def filter_search(one_file):
     if a!=0:
         issues.append(a)
     a = category8_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category8_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category9_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category10_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category11_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category12_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category13_search(one_file)
+    if a!=0:
+        issues.append(a)
+    a = category14_search(one_file)
+    if a!=0:
+        issues.append(a)
+    # a = category15_search(one_file)
+    # if a!=0:
+    #     issues.append(a)
+    a = category16_search(one_file)
     if a!=0:
         issues.append(a)
     with counter.get_lock():
@@ -292,6 +418,10 @@ def getFiles(path,extensions):
                     if ext.lower() in extensions:
                         files.append(os.path.join(r, file))
     
+    for file in files:
+        if checkSafety.get() == 1:
+            # only safety files to be chosen
+            pass
     file_contents_list = []
 
     for file in files:
@@ -337,7 +467,6 @@ def getFiles(path,extensions):
         #print(len(eachfile))
         results.insert(END,eachfile)
         results.yview(END)
-    #print(Items)
         
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
@@ -417,6 +546,7 @@ def search():
     occurances.config(text = "")
     inputs.delete(0,END)
     results.delete(0,END)
+    cat_list.delete(0,END)
     extensions = ext_entry.get().lower().split(',')
 
     #time.sleep(5)
@@ -442,18 +572,17 @@ def structure(output):
 
 
     cid.append(output[0].split(' ')[0])
-    line_n.append(output[0].split(' ')[1])
-    auth.append(" ".join(output[1].split(' ')[1:]))
-    a_mail.append(output[2].split(' ')[1])
-    epoch = int(output[3].split(' ')[1])
-    a_time.append(time.strftime("%Z - %Y/%m/%d, %H:%M:%S", time.localtime(epoch)))#+" "+output[4].split(' ')[1])
+    line_n.append(output[0].split(' ')[2])
     committer.append(" ".join(output[5].split(' ')[1:]))
     c_mail.append(output[6].split(' ')[1])
     epoch = int(output[7].split(' ')[1])
-    c_time.append(time.strftime("%Z - %Y/%m/%d, %H:%M:%S", time.localtime(epoch)))#+" "+output[8].split(' ')[1])
+    c_time.append(time.strftime("%Z - %Y/%m/%d, %H:%M:%S", time.localtime(epoch)))
     summary.append(" ".join(output[9].split(' ')[1:]))
-    file_name.append(" ".join(output[10].split(' ')[1:]))
-    content = output[11][:]
+    file_name.append(" ".join(output[10].split(' ')[-1]))
+    if "filename" in output[11]:
+        content = output[12][:]
+    else:
+        content = output[11][:]
     content = content.replace("\t"," ")
     content = content.replace("  ","")
     line_content.append(content)
@@ -461,7 +590,7 @@ def structure(output):
 def get_dataframe():
 
     df = pd.DataFrame({
-        "Commit_Id" : cid, "Author" : auth, "Author_Mail" : a_mail, "Author_Time" : a_time, "Committer" : committer, "Committer_Mail" : c_mail,
+        "Commit_Id" : cid, "Committer" : committer, "Committer_Mail" : c_mail,
         "Committer_Time" : c_time, "Summary" : summary, "File" : file_name, "Line_Number" : line_n, "Line" : line_content
         })
     return df
@@ -516,7 +645,13 @@ def export():
             new_dir = os.getcwd()+"\\Blame_Reports\\"
             if os.path.isdir(new_dir) == False:
                 os.makedirs(new_dir)
-            writer = pd.ExcelWriter(new_dir+'git_blame'+str(len(os.listdir(new_dir))+1)+'.xlsx')
+
+            if checkSafety.get() == 0:
+                report_file_name = "Project_Application_Deviation_Report"
+            else:
+                report_file_name = "Safety_Application_Deviation_Report"
+
+            writer = pd.ExcelWriter(new_dir+report_file_name+str(len(os.listdir(new_dir))+1)+'.xlsx')
             df.to_excel(writer,'BlameSheet')
             writer.save()
             print("Blame Report is created")
@@ -643,6 +778,11 @@ if __name__ == '__main__':
     checkCmd.set(0)
     checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
     checkBox.grid(row = 0, column = 0)
+
+    checkSafety = IntVar()
+    checkSafety.set(0)
+    checkBoxS = Checkbutton(forcheckbox, variable=checkSafety, onvalue=1, offvalue=0, text="Only Safety Applications",background="light blue")
+    checkBoxS.grid(row = 0, column = 1)
 
     cat_label = Label(category_field,text = "Warnings: ",font=("Times New Roman", 12))
     cat_label.pack(side = LEFT)
