@@ -10,6 +10,7 @@ import pandas as pd
 import re
 from datetime import datetime, timezone
 from multiprocessing import Pool,Value,Lock,current_process
+from pathlib import Path
 
 #git log -p
 #git blame -L <start>,<end> full file name
@@ -18,6 +19,7 @@ count = 0
 counter = None
 reason = []
 libm_lib = "abs labs llabs fabs div ldiv lldiv fmod remainder remquo fma fmax fmin fdim nan nanf nanl exp exp2 expm1 log log2 log10 log1p ilogb logb sqrt cbrt hypot pow sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh erf erfc lgamma tgamma ceil floor trunc round lround llround nearbyint rint lrint llrint frexp ldexp modf scalbn scalbln nextafter nexttoward copysign fpclassify isfinite isinf isnan isnormal signbit".split(" ")
+libm_qnx = "acos acosf acosh acoshf asin asinf asinh asinhf atan atanf atan2 atan2f atanh atanhf cabs cabsf cbrt cbrtf ceil ceilf copysign copysignf cos cosf cosh coshf drem dremf erf erff erfc erfcf exp expf expm1 expm1f fabs fabsf finite finitef floor floorf fmod fmodf fp_exception_mask fp_exception_value fp_precision fp_rounding frexp frexpf gamma gamma_r gammaf gammaf_r hypot hypotf ilogb ilogbf isinf isinff isnan isnanf ldexp lgamma lgamma_r lgammaf lgammaf_r log logf log1p log1pf log10 log10f logb logbf modf modff nextafter nextafterf pow powf remainder remainderf rint rintf scalb scalbf scalbn scalbnf significand significandf sin sinf sinh sinhf sqrt sqrtf tan tanf tanh tanhf".split(" ")
 #-------------------------------------------------------------------------------------------------#
 def init(args):
     ''' store the counter for later use '''
@@ -52,13 +54,12 @@ def category2_search(one_file):
     ft_count = 0
 
     for i,line in enumerate(one_file):
-        for func in libm_lib:
+        for func in libm_qnx:
             myfunc = r'\b'+re.escape(func)+r'\('
             if re.match(myfunc, line) is not None:
                 #print(line)
                 lines.append(i+1)
                 func_count += 1
-
         if re.match(r"\bfeclearexcept\b",line) is not None:
             fc_count += 1
         if re.match(r"\bfetestexcept\b",line) is not None:
@@ -416,7 +417,10 @@ def getFiles(path,extensions):
                 if '.' in file:
                     ext = file.split('.')[1]
                     if ext.lower() in extensions:
-                        files.append(os.path.join(r, file))
+                        full = os.path.join(r, file).replace("\\","/")
+                        if "build/" not in full:
+                            files.append(full)
+        #print(files[0])
     
     file_contents_list = []
 
@@ -474,6 +478,10 @@ def getFiles(path,extensions):
     for r in requirements.split(' '):
         linewise_req.append(r) 
     linewise_req = linewise_req[:-1]
+    temp_req = []
+    for i in linewise_req:
+        temp_req.append(",".join(i.split('_')[3:]))
+    linewise_req = temp_req
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -498,14 +506,32 @@ def start_search_thread(event):
     search_thread.start()
     root.after(20,check_search_thread)
 #---------------------------------------------------------------------------------------------------#
+def start_export_thread(event):
+    button_search.config(state = DISABLED)
+    button_export.config(state = DISABLED)
+    global export_thread
+    export_thread = threading.Thread(target = export)
+    export_thread.daemon = True
+    progressbar.start()
+    export_thread.start()
+    root.after(20,check_export_thread)
+#---------------------------------------------------------------------------------------------------#
+
 def check_search_thread():
     if search_thread.is_alive():
         root.after(20,check_search_thread)
     else:
         progressbar.stop()
 #---------------------------------------------------------------------------------------------------#
+def check_export_thread():
+    if export_thread.is_alive():
+        root.after(20,check_export_thread)
+    else:
+        progressbar.stop()
+#---------------------------------------------------------------------------------------------------#
+
 def get_path(path):
-    p_list = path.split('\\')
+    p_list = path.split('/')
     return "\\".join(p_list[:-1])
 
 #---------------------------------------------------------------------------------------------------#
@@ -602,7 +628,7 @@ def get_dataframe():
 
     df = pd.DataFrame({
         "Requirement_Id" : linewise_req, "Commit_Id" : cid, "Committer" : committer, "Committer_Mail" : c_mail,
-        "Committer_Time" : c_time, "Summary" : summary, "File" : file_name, "Line_Number" : line_n, "Line" : line_content
+        "Committer_Time" : c_time, "Commit_message" : summary, "File" : file_name, "Line_Number" : line_n, "Line" : line_content
         })
     return df
 
@@ -611,7 +637,7 @@ def get_dataframe():
 
 #---------------------------------------------------------------------------------------------------#
 def export():
-    
+    text_status.set("Generating Report....")
     errorflag = 0
     rid[:] = []
     cid[:] = []
@@ -627,20 +653,11 @@ def export():
     line_content[:] = []
 
     if len(Items) > 0:
-        #with open(os.getcwd()+"\\git_blame.txt",'w') as f1:
         output = ""
         for onefile in Items:
             path = onefile.split("--->")[0]
-            #print(path)
-            #output = output + path + "\n\n"
             lines = onefile.split("--->")[1].split(', ')
             lines = lines[:-1]
-            # for line in lines:
-            #     try:
-            #         line_numbers.append(line.split('(line')[1].replace(")","").replace(" ",""))
-            #     except:
-            #         pass
-            # print(line_numbers)
             for line in lines:
                 #git blame --line-porcelain file
                 try:
@@ -662,8 +679,14 @@ def export():
             df.to_excel(writer,'BlameSheet')
             writer.save()
             print("Blame Report is created")
+            text_status.set("Blame Report is created\t")
         else:
             print("No Report is created")
+            text_status.set("No Report is created\t")
+
+        
+        button_export.config(state = "normal")
+        button_search.config(state = "normal")
                 
     
     # else:
@@ -718,7 +741,7 @@ if __name__ == '__main__':
     button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
     button_search.grid(row = 0,column = 2,padx = 5)
 
-    button_export = Button(upper,text = "generate report",command = export,width = 13,bd = 3,font=("Times New Roman", 10))
+    button_export = Button(upper,text = "generate report",command =  lambda: start_export_thread(None),width = 13,bd = 3,font=("Times New Roman", 10))
     button_export.grid(row = 0,column = 3)
 
     inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
