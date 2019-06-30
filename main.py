@@ -9,7 +9,7 @@ import subprocess
 import pandas as pd
 import re
 from datetime import datetime, timezone
-from multiprocessing import Pool,Value,Lock,current_process
+from multiprocessing import Pool,Value,Lock,current_process,freeze_support
 from pathlib import Path
 
 #git log -p
@@ -255,16 +255,16 @@ def category14_search(one_file):
         return (f"StakeholderRS_Safety_DASy_2889 lines: {lines}:- {reason}")
     return 0
 #-------------------------------------------------------------------------------------------------#
-# def category15_search(one_file):
-#     #safety
-#     lines = []
-#     reason = '''An application SHALL set the LD_BIND_NOW environment variable to ensure immediate symbol resolution during application loading. '''
-#     for i,line in enumerate(one_file):
-#         if ("setenv(" in line or "setenv (" in line) and ("LD_BIND_NOW" in line):  
-#             lines.append(i+1)
-#     if len(lines) > 0:
-#         return (f"StakeholderRS_Safety_DASy_2602 lines: {lines}:- {reason}")
-#     return 0
+def category15_search(one_file):
+    #safety
+    lines = []
+    reason = '''An application SHALL set the LD_BIND_NOW environment variable to ensure immediate symbol resolution during application loading. '''
+    for i,line in enumerate(one_file):
+        if "LD_BIND_NOW" in line: 
+            lines.append(i+1)
+    if len(lines) > 0:
+        return (f"StakeholderRS_Safety_DASy_2602 lines: {lines}:- {reason}")
+    return 0
 #-------------------------------------------------------------------------------------------------#
 
 def category16_search(one_file):
@@ -329,15 +329,15 @@ def filter_search(one_file):
     a = category14_search(one_file)
     if a!=0:
         issues.append(a)
-    # a = category15_search(one_file)
-    # if a!=0:
-    #     issues.append(a)
+    a = category15_search(one_file)
+    if a!=0:
+        issues.append(a)
     a = category16_search(one_file)
     if a!=0:
         issues.append(a)
     with counter.get_lock():
         counter.value += 1
-        print(counter.value)
+        print(f"Files processed : {counter.value}")
     return issues
 
 #---------------------------------------------------------------------------------------------------#
@@ -482,6 +482,12 @@ def getFiles(path,extensions):
     for i in linewise_req:
         temp_req.append(",".join(i.split('_')[3:]))
     linewise_req = temp_req
+    if len(linewise_req) > 0:
+        button_export.config(state = "normal")
+    if "2602" not in linewise_req:
+        print("LD_BIND_NOW environment variable not set!!")
+    else:
+        print("LD_BIND_NOW usage found!!")
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -498,7 +504,7 @@ def browse():
 #---------------------------------------------------------------------------------------------------#
 def start_search_thread(event):
     button_search.config(state = DISABLED)
-    button_export.config(state = DISABLED)
+    #button_export.config(state = DISABLED)
     global search_thread
     search_thread = threading.Thread(target = search)
     search_thread.daemon = True
@@ -590,7 +596,7 @@ def search():
     
     getFiles(entry.get(),extensions)
     text_status.set("Scanning Complete\t")
-    button_export.config(state = "normal")
+    # button_export.config(state = "normal")
     button_search.config(state = "normal")
 #---------------------------------------------------------------------------------------------------#
 cid = []
@@ -685,7 +691,7 @@ def export():
             text_status.set("No Report is created\t")
 
         
-        button_export.config(state = "normal")
+        # button_export.config(state = "normal")
         button_search.config(state = "normal")
                 
     
@@ -694,7 +700,7 @@ def export():
             
 #---------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
-    
+    freeze_support() # support multiprocessing in pyinstaller    
 
     root  = Tk()
     root.config(background = 'light blue')
@@ -743,6 +749,7 @@ if __name__ == '__main__':
 
     button_export = Button(upper,text = "generate report",command =  lambda: start_export_thread(None),width = 13,bd = 3,font=("Times New Roman", 10))
     button_export.grid(row = 0,column = 3)
+    button_export.config(state = DISABLED)
 
     inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
     inputLabel.grid(row = 0,column = 0)
