@@ -440,7 +440,10 @@ def getFiles(path,extensions):
     p.join()
     endtime = time.time()
     elapsedtime = endtime - starttime
-    print(f"Elapsed time: {(int)(elapsedtime / 60)} minutes and {(int)(elapsedtime % 60)}seconds")
+    if elapsedtime > 59:
+        print(f"\nElapsed time: {(int)(elapsedtime / 60)} minutes and {(int)(elapsedtime % 60)} seconds")
+    else:
+        print(f"\nElapsed time: {(int)(elapsedtime % 60)} seconds")
 
     inception = [lst for lst in i.get()]
 
