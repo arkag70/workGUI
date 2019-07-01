@@ -249,7 +249,7 @@ def category14_search(one_file):
     lines = []
     reason = '''A safety application SHALL NOT modify MALLOC_BAND_CONFIG_STR after system start-up '''
     for i,line in enumerate(one_file):
-        if ("setenv(" in line or "setenv (" in line) and ("MALLOC_BAND_CONFIG_STR" in line):  
+        if "MALLOC_BAND_CONFIG_STR" in line:  
             lines.append(i+1)
     if len(lines) > 0:
         return (f"StakeholderRS_Safety_DASy_2889 lines: {lines}:- {reason}")
@@ -399,6 +399,8 @@ req = []
 requirements = ""
 linewise_req = []
 def getFiles(path,extensions):
+
+    starttime = time.time()
     global linewise_req
     files = []
     file_names_with_issues = []
@@ -431,13 +433,14 @@ def getFiles(path,extensions):
 
     
     counter = Value('i', 0)
-    starttime = time.time()
     text_status.set("Processing....")
     p = Pool(os.cpu_count(),initializer = init, initargs = (counter, ))
     i = p.map_async(filter_search, file_contents_list, chunksize = 1)
     p.close()
     p.join()
-    print(f"Elapsed time: {time.time() - starttime}")
+    endtime = time.time()
+    elapsedtime = endtime - starttime
+    print(f"Elapsed time: {(int)(elapsedtime / 60)} minutes and {(int)(elapsedtime % 60)}seconds")
 
     inception = [lst for lst in i.get()]
 
@@ -484,10 +487,15 @@ def getFiles(path,extensions):
     linewise_req = temp_req
     if len(linewise_req) > 0:
         button_export.config(state = "normal")
+    print("\nRemarks :\n")
     if "2602" not in linewise_req:
-        print("LD_BIND_NOW environment variable not set!!")
+        print("LD_BIND_NOW environment variable not set. Please refer to StakeholderRS_Safety_DASy_2602")
     else:
-        print("LD_BIND_NOW usage found!!")
+        print("LD_BIND_NOW usage found. Please refer to StakeholderRS_Safety_DASy_2602")
+    if "2889" not in linewise_req:
+        print("MALLOC_BAND_CONFIG_STR environment variable not set. Please refer to StakeholderRS_Safety_DASy_2889")
+    else:
+        print("MALLOC_BAND_CONFIG_STR usage found. Please refer to StakeholderRS_Safety_DASy_2889")
 #---------------------------------------------------------------------------------------------------#
 initialdir = ""
 
@@ -677,15 +685,15 @@ def export():
 
         if errorflag == 0:    
             df = get_dataframe()
-            new_dir = os.getcwd()+"\\Blame_Reports\\"
+            new_dir = os.getcwd()+"\\Reports\\"
             if os.path.isdir(new_dir) == False:
                 os.makedirs(new_dir)
 
             writer = pd.ExcelWriter(new_dir+"Project_Application_Deviation_Report"+str(len(os.listdir(new_dir))+1)+'.xlsx')
-            df.to_excel(writer,'BlameSheet')
+            df.to_excel(writer,'ReportSheet')
             writer.save()
-            print("Blame Report is created")
-            text_status.set("Blame Report is created\t")
+            print("Report is created")
+            text_status.set("Report is created\t")
         else:
             print("No Report is created")
             text_status.set("No Report is created\t")
