@@ -456,7 +456,7 @@ def getFiles(path,extensions):
             file_names_with_issues.append(files[i])
     
     
-    occurances.config(text = 'Number of hits: '+str(hits))
+    occurances.config(text = 'Files with findings: '+str(hits))
     for index,eachfile in enumerate(file_names_with_issues):
         #print(eachfile)
         onefile_line =[]
@@ -505,7 +505,7 @@ initialdir = ""
 def browse():
     global initialdir
     if entry.get() == "Browser for the Project Directory" or entry.get() == '':
-        initialdir = "D:\\"
+        initialdir = "C:\\"
     else:
         initialdir = entry.get()
     dirname = filedialog.askdirectory(parent=root, initialdir=initialdir, title='Choose your Project Directory')
@@ -692,7 +692,7 @@ def export():
             if os.path.isdir(new_dir) == False:
                 os.makedirs(new_dir)
 
-            writer = pd.ExcelWriter(new_dir+"Project_Application_Deviation_Report"+str(len(os.listdir(new_dir))+1)+'.xlsx')
+            writer = pd.ExcelWriter(new_dir+"Safety_Guideline_Deviation_report"+str(len(os.listdir(new_dir))+1)+'.xlsx')
             df.to_excel(writer,'ReportSheet')
             writer.save()
             print("Report is created")
@@ -715,9 +715,9 @@ if __name__ == '__main__':
 
     root  = Tk()
     root.config(background = 'light blue')
-    root.geometry("1120x700")
+    root.geometry("1120x750")
     root.resizable(width=False, height=False)
-    root.title("DASy Software Restrictions Scanner")
+    root.title("DASy Safety Guideline Deviation Scanner")
 
     upper = Frame(root,background  = 'light blue')
     upper.grid(row = 0,column = 0,padx = 40,pady = 20)
@@ -747,26 +747,30 @@ if __name__ == '__main__':
     down.grid(row = 6,column = 0,pady = 10)
 
 
+    head = Label(upper,text = "Browse and select the Project space and hit Scan to process the Project files",font=("Calibri 12 bold"),anchor = 'w',width = 100)
+    head.grid(row = 0,column = 0)
+    head.config(background = 'light blue')
+
     entry = Entry(upper,width = 100,bd = 3)
-    entry.grid(row = 0,column = 0)
-    entry.config(font=("Times New Roman", 12))
+    entry.grid(row = 1,column = 0)
+    entry.config(font=("Calibri", 12))
     entry.insert(0,'Browser for the Project Directory')
 
-    button_browse = Button(upper,text = "...",command = browse,width = 4,bd = 3,font=("Times New Roman", 10))
-    button_browse.grid(row = 0,column = 1)
+    button_browse = Button(upper,text = "browse",command = browse,width = 7,bd = 3,font=("Calibri", 10))
+    button_browse.grid(row = 1,column = 1)
 
-    button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Times New Roman", 10))
-    button_search.grid(row = 0,column = 2,padx = 5)
+    button_search = Button(upper,text = "scan",command = lambda: start_search_thread(None),width = 5,bd = 3,font=("Calibri", 10))
+    button_search.grid(row = 1,column = 2,padx = 5)
 
-    button_export = Button(upper,text = "generate report",command =  lambda: start_export_thread(None),width = 13,bd = 3,font=("Times New Roman", 10))
-    button_export.grid(row = 0,column = 3)
+    button_export = Button(upper,text = "generate report",command =  lambda: start_export_thread(None),width = 13,bd = 3,font=("Calibri", 10))
+    button_export.grid(row = 1,column = 3)
     button_export.config(state = DISABLED)
 
-    inputLabel = Label(Labelling,text = "All Files",font=("Times New Roman", 12),anchor = 'w',width = 100)
+    inputLabel = Label(Labelling,text = "All Files",font=("Calibri", 12),anchor = 'w',width = 100)
     inputLabel.grid(row = 0,column = 0)
     inputLabel.config(background = 'light blue')
 
-    resultLabel = Label(Labelling,text = "Files with hits",font=("Times New Roman", 12))
+    resultLabel = Label(Labelling,text = "Files with findings",font=("Calibri", 12))
     resultLabel.grid(row = 0,column = 1)
     resultLabel.config(background = 'light blue')
 
@@ -787,7 +791,7 @@ if __name__ == '__main__':
     h_scrollbar_i.pack(side="bottom", fill="x")
 
     inputs.pack(side = LEFT)
-    inputs.configure(font=("Times New Roman", 12))
+    inputs.configure(font=("Calibri", 12))
 
     inputs.bind("<Double-Button>",inp_listbox_click)
 
@@ -809,25 +813,29 @@ if __name__ == '__main__':
     h_scrollbar.pack(side="bottom", fill="x")
 
     results.pack(side = LEFT)
-    results.configure(font=("Times New Roman", 12))
+    results.configure(font=("Calibri", 12))
 
     results.bind("<Double-Button>",res_listbox_click)
     results.bind("<<ListboxSelect>>",res_listbox_click1)
 
-    ext_label = Label(extension_layout,text = "File extensions :  ",font=("Times New Roman", 12))
+    abv_ext_label = Label(extension_layout,text = "Recommended file extentions : c cpp h hpp cmake",font=("Calibri 12 bold"))
+    abv_ext_label.grid(row = 0,column = 0)
+    abv_ext_label.config(background = 'light blue')
+
+    ext_label = Label(forcheckbox,text = "File extensions :  ",font=("Calibri", 12))
     ext_label.grid(row = 0,column = 0)
     ext_label.config(background = 'light blue')
 
-    ext_entry = Entry(extension_layout,width = 100,bd = 3,font=("Times New Roman", 12))
+    ext_entry = Entry(forcheckbox,width = 50,bd = 3,font=("Calibri", 12))
     ext_entry.grid(row = 0,column = 1)
     ext_entry.insert(0,"c,cpp,h,hpp,txt,cmake")
 
     checkCmd = IntVar()
     checkCmd.set(0)
-    checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments",background="light blue")
-    checkBox.grid(row = 0, column = 0)
+    checkBox = Checkbutton(forcheckbox, variable=checkCmd, onvalue=1, offvalue=0, text="Ignore Comments in files",background="light blue",font=("Calibri", 12))
+    checkBox.grid(row = 0, column = 2)
 
-    cat_label = Label(category_field,text = "Warnings: ",font=("Times New Roman", 12))
+    cat_label = Label(category_field,text = "Warnings: ",font=("Calibri", 12))
     cat_label.pack(side = LEFT)
     cat_label.config(background = 'light blue')
 
@@ -846,20 +854,20 @@ if __name__ == '__main__':
     h_scrollbar_c.pack(side="bottom", fill="x")
 
     cat_list.pack(side = LEFT)
-    cat_list.configure(font=("Times New Roman", 12))
+    cat_list.configure(font=("Calibri", 12))
 
     global text_status
     text_status = StringVar()
-    status = Label(down,background = 'light blue',font=("Times New Roman", 12),textvariable = text_status)
+    status = Label(down,background = 'light blue',font=("Calibri", 12),textvariable = text_status)
     status.grid(row = 0, column = 1)
 
-    files_number = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_number = Label(down,background = 'light blue',font=("Calibri", 12))
     files_number.grid(row = 0, column = 2)
 
-    files_found = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    files_found = Label(down,background = 'light blue',font=("Calibri", 12))
     files_found.grid(row = 0, column = 3)
 
-    occurances = Label(down,background = 'light blue',font=("Times New Roman", 12))
+    occurances = Label(down,background = 'light blue',font=("Calibri", 12))
     occurances.grid(row = 0, column = 4)
 
     progressbar = ttk.Progressbar(down,mode = 'indeterminate')
